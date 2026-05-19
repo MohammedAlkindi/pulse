@@ -1,0 +1,28 @@
+sources:
+  gmail:
+    enabled: true
+    credentials_path: "config/credentials.json"
+    token_path: "config/token.json"
+    lookback_days: 7
+    labels: ["INBOX", "SENT"]
+
+  github:
+    enabled: true
+    token_env: "GITHUB_TOKEN"
+    username: ""          # your GitHub username
+    lookback_days: 7
+
+  notion:
+    enabled: true
+    token_env: "NOTION_TOKEN"
+    lookback_days: 7
+
+analysis:
+  model: "claude-sonnet-4-6"
+  api_key_env: "ANTHROPIC_API_KEY"
+
+briefing:
+  enabled: true
+  schedule: "sunday_evening"
+  recipient_email: ""   # who receives the briefing
+  sender_email: ""      # must match the Gmail account used for OAuth

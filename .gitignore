@@ -1,0 +1,28 @@
+.claude
+
+# Credentials and tokens — never commit
+config/credentials.json
+config/token.json
+config/pulse_config.yaml
+
+# Runtime data
+data/
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.env
