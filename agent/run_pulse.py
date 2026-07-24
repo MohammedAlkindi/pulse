@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agent import manifest
 from agent.config import load_config
+from agent.health import check as health_check
 from agent.paths import ensure_dirs
 from agent.scheduler import _current_week, run_ingestion
 from agent.store.db import count_events_for_week, init_db
@@ -72,6 +73,19 @@ def main() -> None:
     except FileNotFoundError as exc:
         print(f"ERROR: {exc}")
         sys.exit(1)
+
+    health = health_check(cfg)
+    if health["status"] == "failed":
+        print("\nHealth check FAILED — Pulse cannot start:")
+        for c in health["checks"]:
+            if c["status"] != "ok":
+                print(f"  MISSING: {c['name']}")
+        sys.exit(1)
+    elif health["status"] == "degraded":
+        _log = logging.getLogger(__name__)
+        for c in health["checks"]:
+            if c["status"] != "ok":
+                _log.warning("[health] non-critical check failed: %s", c["name"])
 
     week = _current_week()
     flags = {"dry_run": args.dry_run, "send": args.send}

@@ -92,7 +92,6 @@ def deliver(content: str, week: str, cfg: Config, send: bool = False) -> bool:
         logger.error("[emailer] recipient_email and sender_email must be set in config.")
         return False
 
-    source_cfg = cfg.source_cfg("gmail")
     credentials_path = str(Path(cfg.get("sources", "gmail", "credentials_path",
                                         default="config/credentials.json")))
     token_path = str(Path(cfg.get("sources", "gmail", "token_path",
