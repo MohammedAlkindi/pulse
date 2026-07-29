@@ -30,11 +30,25 @@ _Computed from {len(momentum['weeks'])} weeks of stored history — not model ou
 """
 
 
+def _source_disclosures(source_status: dict[str, dict] | None) -> list[str]:
+    """Honest per-source availability notes: a failed connector means the
+    briefing is working from partial evidence, and must say so."""
+    if not source_status:
+        return []
+    notes = []
+    for name, s in sorted(source_status.items()):
+        if s.get("status") == "error":
+            reason = (s.get("error") or "")[:120]
+            notes.append(f"{name} was unavailable this run ({reason}) — its activity is missing from this briefing.")
+    return notes
+
+
 def generate(
     week: str,
     analysis: dict,
     event_counts: dict[str, dict[str, int]],
     momentum: dict | None = None,
+    source_status: dict[str, dict] | None = None,
 ) -> str:
     """
     Assemble the briefing Markdown.
@@ -56,7 +70,7 @@ def generate(
     active = _bullet_list(analysis.get("active_projects", []))
     drifting = _bullet_list(analysis.get("drifting", []))
     next_week = _bullet_list(analysis.get("attention_next_week", []))
-    dq_notes = analysis.get("data_quality_notes", [])
+    dq_notes = _source_disclosures(source_status) + list(analysis.get("data_quality_notes", []))
 
     dq_section = ""
     if dq_notes:

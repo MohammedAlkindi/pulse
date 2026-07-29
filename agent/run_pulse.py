@@ -42,14 +42,21 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _print_summary(
-    source_counts: dict[str, int],
+    source_results: dict[str, dict],
     total_new: int,
     analysis_status: str,
     briefing_path: str | None,
     delivered: bool,
 ) -> None:
+    def label(src: str, r: dict) -> str:
+        if r["status"] == "disabled":
+            return f"{src} (off)"
+        if r["status"] == "error":
+            return f"{src} (FAILED)"
+        return f"{src} ({r['new']} new, {r['updated']} updated)"
+
     source_str = ", ".join(
-        f"{src} ({n})" for src, n in sorted(source_counts.items())
+        label(src, r) for src, r in sorted(source_results.items())
     ) or "none"
 
     print()
@@ -92,11 +99,11 @@ def main() -> None:
     manifest.run_start(args.config, flags)
 
     # ── ingestion ────────────────────────────────────────────────────────────
-    source_counts = run_ingestion(cfg)
-    total_new = sum(source_counts.values())
+    source_results = run_ingestion(cfg)
+    total_new = sum(r["new"] for r in source_results.values())
 
     if args.dry_run:
-        _print_summary(source_counts, total_new, "skipped (--dry-run)", None, False)
+        _print_summary(source_results, total_new, "skipped (--dry-run)", None, False)
         manifest.run_end({"status": "dry_run", "new_events": total_new})
         return
 
@@ -105,7 +112,8 @@ def main() -> None:
     from agent.paths import BRIEFING_DRAFT
 
     try:
-        content = run_analysis_and_briefing(cfg, week, send=args.send)
+        content = run_analysis_and_briefing(cfg, week, send=args.send,
+                                            source_status=source_results)
         analysis_status = "complete"
         briefing_path = str(BRIEFING_DRAFT) if content else None
     except Exception as exc:
@@ -115,7 +123,7 @@ def main() -> None:
         content = None
 
     delivered = args.send and content is not None
-    _print_summary(source_counts, total_new, analysis_status, briefing_path, delivered)
+    _print_summary(source_results, total_new, analysis_status, briefing_path, delivered)
     manifest.run_end({
         "status": "complete",
         "week": week,

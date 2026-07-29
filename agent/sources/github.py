@@ -34,6 +34,15 @@ def _headers(token: str) -> dict[str, str]:
 @with_retry(label="GitHub API", max_attempts=3, retryable=(requests.RequestException,))
 def _get(url: str, token: str, params: dict | None = None) -> Any:
     resp = requests.get(url, headers=_headers(token), params=params, timeout=20)
+    if resp.status_code == 429 or (
+        resp.status_code == 403 and resp.headers.get("X-RateLimit-Remaining") == "0"
+    ):
+        # Honor the server's pacing (bounded) before the retry decorator fires.
+        import time
+        retry_after = resp.headers.get("Retry-After", "")
+        wait = min(60, int(retry_after)) if retry_after.isdigit() else 30
+        logger.warning("[github] rate limited; waiting %ds.", wait)
+        time.sleep(wait)
     resp.raise_for_status()
     return resp.json()
 
@@ -65,6 +74,8 @@ def _events_from_push(gh_event: dict, cutoff: datetime) -> list[Event]:
             },
             occurred_at=created_at.isoformat(),
             week_number=iso_week(created_at),
+            actor=commit.get("author", {}).get("name", ""),
+            canonical_url=f"https://github.com/{repo}/commit/{commit['sha']}",
         )
         events.append(evt)
     return events
@@ -97,6 +108,8 @@ def _event_from_pr(gh_event: dict, cutoff: datetime) -> Event | None:
         },
         occurred_at=created_at.isoformat(),
         week_number=iso_week(created_at),
+        actor=gh_event.get("actor", {}).get("login", ""),
+        canonical_url=pr.get("html_url", ""),
     )
 
 
@@ -124,6 +137,8 @@ def _event_from_issue(gh_event: dict, cutoff: datetime) -> Event | None:
         },
         occurred_at=created_at.isoformat(),
         week_number=iso_week(created_at),
+        actor=gh_event.get("actor", {}).get("login", ""),
+        canonical_url=issue.get("html_url", ""),
     )
 
 
@@ -147,6 +162,8 @@ def _event_from_create(gh_event: dict, cutoff: datetime) -> Event | None:
         },
         occurred_at=created_at.isoformat(),
         week_number=iso_week(created_at),
+        actor=gh_event.get("actor", {}).get("login", ""),
+        canonical_url=f"https://github.com/{repo}",
     )
 
 
@@ -158,29 +175,23 @@ _HANDLERS = {
 }
 
 
-def fetch(cfg: Config) -> list[Event]:
+def fetch(cfg: Config, since: datetime | None = None) -> list[Event]:
+    """Fetch GitHub events since `since` (or the configured lookback).
+    Raises on total failure so the scheduler can record a real error;
+    per-event problems are skipped with a warning."""
     source_cfg = cfg.source_cfg("github")
     username: str = source_cfg.get("username", "")
     lookback_days: int = source_cfg.get("lookback_days", 7)
 
     if not username:
-        logger.error("[github] 'username' is required in config but not set.")
-        return []
+        raise ValueError("github: 'username' is required in config but not set.")
 
-    try:
-        token = cfg.env(source_cfg.get("token_env", "GITHUB_TOKEN"))
-    except EnvironmentError as exc:
-        logger.error("[github] %s", exc)
-        return []
+    token = cfg.env(source_cfg.get("token_env", "GITHUB_TOKEN"))
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    cutoff = since or (datetime.now(timezone.utc) - timedelta(days=lookback_days))
     events: list[Event] = []
 
-    try:
-        gh_events = _paginate_events(username, token)
-    except Exception as exc:
-        logger.error("[github] failed to fetch events: %s", exc)
-        return []
+    gh_events = _paginate_events(username, token)
 
     for gh_event in gh_events:
         event_type = gh_event.get("type", "")

@@ -86,13 +86,16 @@ def _extract_event(msg_meta: dict, label: str) -> Event:
         metadata=metadata,
         occurred_at=occurred.isoformat(),
         week_number=iso_week(occurred),
+        actor=sender,
+        canonical_url=f"https://mail.google.com/mail/u/0/#all/{msg_id}",
     )
 
 
-def fetch(cfg: Config) -> list[Event]:
+def fetch(cfg: Config, since: datetime | None = None) -> list[Event]:
     """
-    Fetch Gmail events for the last N days.
-    Returns empty list and logs on any failure.
+    Fetch Gmail events since `since` (or the configured lookback).
+    Raises when the service cannot be built (auth failure) so the scheduler
+    records a real error; per-label failures degrade with a warning.
     """
     source_cfg = cfg.source_cfg("gmail")
     credentials_path = str(Path(cfg.get("sources", "gmail", "credentials_path", default="config/credentials.json")))
@@ -100,13 +103,9 @@ def fetch(cfg: Config) -> list[Event]:
     lookback_days: int = source_cfg.get("lookback_days", 7)
     labels: list[str] = source_cfg.get("labels", ["INBOX", "SENT"])
 
-    try:
-        service = _build_service(credentials_path, token_path)
-    except Exception as exc:
-        logger.error("[gmail] failed to build service: %s", exc)
-        return []
+    service = _build_service(credentials_path, token_path)
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    cutoff = since or (datetime.now(timezone.utc) - timedelta(days=lookback_days))
     after_epoch = int(cutoff.timestamp())
 
     events: list[Event] = []

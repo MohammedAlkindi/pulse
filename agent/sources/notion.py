@@ -119,29 +119,34 @@ def _page_to_event(page: dict, cutoff: datetime) -> Event | None:
         },
         occurred_at=occurred.isoformat(),
         week_number=iso_week(occurred),
+        actor=page.get("last_edited_by", {}).get("id", ""),
+        canonical_url=page.get("url", ""),
     )
 
 
-def fetch(cfg: Config) -> list[Event]:
+def fetch(cfg: Config, since: datetime | None = None) -> list[Event]:
+    """Fetch Notion page events since `since` (or the configured lookback).
+    Raises when the token is missing or the first search fails; later
+    pagination failures degrade with whatever was already fetched."""
     source_cfg = cfg.source_cfg("notion")
     lookback_days: int = source_cfg.get("lookback_days", 7)
 
-    try:
-        token = cfg.env(source_cfg.get("token_env", "NOTION_TOKEN"))
-    except EnvironmentError as exc:
-        logger.error("[notion] %s", exc)
-        return []
+    token = cfg.env(source_cfg.get("token_env", "NOTION_TOKEN"))
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    cutoff = since or (datetime.now(timezone.utc) - timedelta(days=lookback_days))
     events: list[Event] = []
     cursor = None
+    first_page = True
 
     while True:
         try:
             resp = _search(token, cursor)
-        except Exception as exc:
-            logger.error("[notion] search failed: %s", exc)
+        except Exception:
+            if first_page:
+                raise
+            logger.error("[notion] pagination failed; returning partial results.")
             break
+        first_page = False
 
         for page in resp.get("results", []):
             try:

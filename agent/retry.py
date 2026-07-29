@@ -1,6 +1,7 @@
 """Exponential-backoff retry decorator for external API calls."""
 
 import logging
+import random
 import time
 from functools import wraps
 from typing import Callable, Tuple, Type
@@ -33,10 +34,11 @@ def with_retry(
                     if attempt == max_attempts:
                         break
                     logger.warning(
-                        "[retry] %s — attempt %d/%d failed: %s. Retrying in %.1fs.",
+                        "[retry] %s — attempt %d/%d failed: %s. Retrying in ~%.1fs.",
                         label, attempt, max_attempts, exc, delay,
                     )
-                    time.sleep(delay)
+                    # Jitter prevents synchronized retry storms across sources.
+                    time.sleep(delay * (0.75 + random.random() * 0.5))
                     delay *= backoff
             raise last_exc  # type: ignore[misc]
         return wrapper
