@@ -12,20 +12,23 @@ def _bullet_list(items: list[str], fallback: str = "_None identified._") -> str:
 def generate(
     week: str,
     analysis: dict,
-    event_counts: dict[str, int],
+    event_counts: dict[str, dict[str, int]],
 ) -> str:
     """
     Assemble the briefing Markdown.
 
-    event_counts: {source: count} as returned by db.count_events_for_week()
+    event_counts: {source: {event_type: count}} as returned by
+    db.count_events_by_type_for_week() — the per-type split is what lets
+    Gmail report received vs sent instead of a single opaque total.
     analysis: structured dict from analyzer.analyze()
     """
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    gmail_received = event_counts.get("gmail_received", 0)
-    gmail_sent = event_counts.get("gmail_sent", 0)
-    github_total = event_counts.get("github", 0)
-    notion_total = event_counts.get("notion", 0)
+    gmail = event_counts.get("gmail", {})
+    gmail_received = gmail.get("email_received", 0)
+    gmail_sent = gmail.get("email_sent", 0)
+    github_total = sum(event_counts.get("github", {}).values())
+    notion_total = sum(event_counts.get("notion", {}).values())
 
     themes = _bullet_list(analysis.get("themes", []))
     active = _bullet_list(analysis.get("active_projects", []))

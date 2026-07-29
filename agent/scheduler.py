@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from agent import manifest
 from agent.config import Config
-from agent.store.db import count_events_for_week, get_events_for_week, init_db, insert_event
+from agent.store.db import get_events_for_week, insert_event
 from agent.store.models import iso_week
 
 logger = logging.getLogger(__name__)
@@ -64,12 +64,12 @@ def run_analysis_and_briefing(cfg: Config, week: str, send: bool = False) -> str
     """
     from agent.analysis import analyzer
     from agent.briefing import emailer, generator
-    from agent.store.db import Briefing, insert_briefing
+    from agent.store.db import count_events_by_type_for_week, insert_briefing
     from agent.store.models import Briefing as BriefingModel
     import uuid
 
     events = get_events_for_week(week)
-    counts = count_events_for_week(week)
+    counts = count_events_by_type_for_week(week)
 
     analysis = analyzer.analyze(events, cfg)
     content = generator.generate(week, analysis, counts)

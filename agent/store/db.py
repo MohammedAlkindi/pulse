@@ -101,6 +101,21 @@ def count_events_for_week(week: str, db_path: Path = DB_PATH) -> dict[str, int]:
     return {row["source"]: row["n"] for row in rows}
 
 
+def count_events_by_type_for_week(week: str, db_path: Path = DB_PATH) -> dict[str, dict[str, int]]:
+    """Return {source: {event_type: count}} for one week."""
+    sql = """
+        SELECT source, event_type, COUNT(*) as n
+        FROM events WHERE week_number = ?
+        GROUP BY source, event_type
+    """
+    with _conn(db_path) as con:
+        rows = con.execute(sql, (week,)).fetchall()
+    result: dict[str, dict[str, int]] = {}
+    for row in rows:
+        result.setdefault(row["source"], {})[row["event_type"]] = row["n"]
+    return result
+
+
 # ── briefings ────────────────────────────────────────────────────────────────
 
 def insert_briefing(briefing: Briefing, db_path: Path = DB_PATH) -> None:

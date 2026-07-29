@@ -57,6 +57,16 @@ class TestEvents:
         db.insert_event(make_event("3", source="gmail", event_type="email_received"), tmp_db)
         assert db.count_events_for_week("2026-W31", tmp_db) == {"github": 2, "gmail": 1}
 
+    def test_counts_by_type_split_within_source(self, tmp_db):
+        db.insert_event(make_event("r1", source="gmail", event_type="email_received"), tmp_db)
+        db.insert_event(make_event("r2", source="gmail", event_type="email_received"), tmp_db)
+        db.insert_event(make_event("s1", source="gmail", event_type="email_sent"), tmp_db)
+        db.insert_event(make_event("c1", source="github", event_type="commit"), tmp_db)
+        assert db.count_events_by_type_for_week("2026-W31", tmp_db) == {
+            "gmail": {"email_received": 2, "email_sent": 1},
+            "github": {"commit": 1},
+        }
+
     def test_week_filter_excludes_other_weeks(self, tmp_db):
         db.insert_event(make_event("w1", week="2026-W30"), tmp_db)
         db.insert_event(make_event("w2", week="2026-W31"), tmp_db)
