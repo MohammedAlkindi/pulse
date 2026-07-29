@@ -292,6 +292,49 @@ def list_link_suggestions(status: str = "pending", db_path: Path = DB_PATH) -> l
     return result
 
 
+def assign_event_workstreams(assignments: dict[str, str], db_path: Path = DB_PATH) -> None:
+    with _conn(db_path) as con:
+        con.executemany(
+            "UPDATE events SET workstream_id = ? WHERE id = ?",
+            [(ws, eid) for eid, ws in assignments.items()],
+        )
+
+
+def get_unassigned_events(weeks: list[str], db_path: Path = DB_PATH) -> list[dict]:
+    if not weeks:
+        return []
+    placeholders = ",".join("?" * len(weeks))
+    sql = (f"SELECT * FROM events WHERE workstream_id = '' AND deleted = 0 "
+           f"AND week_number IN ({placeholders}) ORDER BY occurred_at, id")
+    with _conn(db_path) as con:
+        rows = con.execute(sql, weeks).fetchall()
+    return [_row_to_event_dict(r) for r in rows]
+
+
+def get_events_for_workstream(ws_id: str, limit: int = 200, db_path: Path = DB_PATH) -> list[dict]:
+    sql = ("SELECT * FROM events WHERE workstream_id = ? AND deleted = 0 "
+           "ORDER BY occurred_at DESC, id LIMIT ?")
+    with _conn(db_path) as con:
+        rows = con.execute(sql, (ws_id, limit)).fetchall()
+    return [_row_to_event_dict(r) for r in rows]
+
+
+def workstream_week_counts(weeks: list[str], db_path: Path = DB_PATH) -> dict[str, dict[str, int]]:
+    """{workstream_id: {week: count}} over the given weeks (assigned events only)."""
+    if not weeks:
+        return {}
+    placeholders = ",".join("?" * len(weeks))
+    sql = (f"SELECT workstream_id, week_number, COUNT(*) AS n FROM events "
+           f"WHERE workstream_id != '' AND deleted = 0 AND week_number IN ({placeholders}) "
+           f"GROUP BY workstream_id, week_number")
+    with _conn(db_path) as con:
+        rows = con.execute(sql, weeks).fetchall()
+    out: dict[str, dict[str, int]] = {}
+    for r in rows:
+        out.setdefault(r["workstream_id"], {})[r["week_number"]] = r["n"]
+    return out
+
+
 # ── items (decisions, commitments, risks) ───────────────────────────────────
 
 def insert_item(item: dict, db_path: Path = DB_PATH) -> None:

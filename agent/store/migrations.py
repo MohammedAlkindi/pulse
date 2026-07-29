@@ -101,6 +101,10 @@ MIGRATIONS: list[tuple[int, str, list[str]]] = [
             event_id UNINDEXED, title, snippet
         )""",
     ]),
+    (4, "workstream_assignment", [
+        "ALTER TABLE events ADD COLUMN workstream_id TEXT NOT NULL DEFAULT ''",
+        "CREATE INDEX IF NOT EXISTS events_workstream_idx ON events (workstream_id, occurred_at)",
+    ]),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]
