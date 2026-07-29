@@ -66,6 +66,18 @@ class TestMomentumQueries:
         assert result["kind"] == "momentum"
         assert "stalled" in result["answer"]
         assert result["interpretation"] is False
+        # Computed from stored history — grounded even though it cites no
+        # individual event records.
+        assert result["grounded"] is True
+
+    def test_momentum_without_history_is_not_grounded(self, tmp_path, monkeypatch):
+        from agent import paths
+        path = tmp_path / "bare.db"
+        monkeypatch.setattr(paths, "DB_PATH", path)
+        db.init_db(path)
+        result = ask("Which projects are losing momentum?", db_path=path)
+        assert result["grounded"] is False
+        assert "Not enough multi-week history" in result["answer"]
 
 
 class TestGapQueries:

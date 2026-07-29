@@ -40,13 +40,16 @@ def _parse_args() -> argparse.Namespace:
                    help="Deliver briefing via email (requires briefing.enabled: true)")
     p.add_argument("--demo", action="store_true",
                    help="Run the synthetic corpus end-to-end; no credentials, writes to data/demo/")
+    p.add_argument("--ui", action="store_true",
+                   help="Serve the local web interface on 127.0.0.1")
+    p.add_argument("--port", type=int, default=8787, help="Port for --ui (default 8787)")
     p.add_argument("--export", metavar="PATH",
                    help="Write a full JSON export of local data to PATH and exit")
     p.add_argument("--purge", action="store_true",
                    help="Delete all local Pulse data (events, items, briefings) and exit")
     args = p.parse_args()
-    if not args.config and not (args.demo or args.export or args.purge):
-        p.error("--config is required unless running --demo, --export, or --purge")
+    if not args.config and not (args.demo or args.export or args.purge or args.ui):
+        p.error("--config is required unless running --demo, --ui, --export, or --purge")
     return args
 
 
@@ -81,7 +84,7 @@ def _run_demo() -> None:
     from agent.demo.runner import run, use_demo_paths
 
     demo_root = use_demo_paths()
-    print(f"\n  Demo mode — synthetic data only, written to {demo_root}\n")
+    print(f"\n  Demo mode - synthetic data only, written to {demo_root}\n")
     summary = run()
     print(f"  Corpus events:     {summary['submitted']} submitted, {summary['new']} new")
     print(f"  Workstreams:       {summary['workstreams']}")
@@ -97,10 +100,23 @@ def main() -> None:
     if args.demo:
         ensure_dirs()
         _run_demo()
+        if args.ui:
+            from agent.demo.runner import DEMO_CONFIG
+            from agent.web.server import serve
+            serve(DEMO_CONFIG, port=args.port)
         return
 
     ensure_dirs()
     init_db()
+
+    if args.ui:
+        from agent.web.server import serve
+        ui_cfg = load_config(args.config) if args.config else None
+        if ui_cfg is None:
+            from agent.config import Config as _Config
+            ui_cfg = _Config({})
+        serve(ui_cfg, port=args.port)
+        return
 
     if args.export:
         import json
@@ -123,7 +139,7 @@ def main() -> None:
 
     health = health_check(cfg, require_analysis=not args.dry_run)
     if health["status"] == "failed":
-        print("\nHealth check FAILED — Pulse cannot start:")
+        print("\nHealth check FAILED - Pulse cannot start:")
         for c in health["checks"]:
             if c["status"] != "ok":
                 print(f"  MISSING: {c['name']}")

@@ -42,10 +42,14 @@ def _cite(events: list[dict]) -> list[dict]:
     } for e in events]
 
 
-def _answer(text: str, evidence: list[dict], *, kind: str, interpretation: bool = False) -> dict:
+def _answer(text: str, evidence: list[dict], *, kind: str, interpretation: bool = False,
+            grounded: bool | None = None) -> dict:
+    """`grounded` defaults to "cites source records", but computed answers
+    (momentum) are grounded in stored history without citing individual
+    events, so callers can state it explicitly."""
     return {"answer": text, "evidence": evidence, "kind": kind,
             "interpretation": interpretation,
-            "grounded": bool(evidence)}
+            "grounded": bool(evidence) if grounded is None else grounded}
 
 
 # ── deterministic intents ───────────────────────────────────────────────────
@@ -131,10 +135,12 @@ def _momentum_question(question: str, db_path=None) -> dict | None:
                                 else db.get_events_for_weeks(weeks), weeks)
     tracks = momentum["tracks"]
     if not tracks:
-        return _answer("Not enough multi-week history to compute momentum yet.", [], kind="momentum")
+        return _answer("Not enough multi-week history to compute momentum yet.", [],
+                       kind="momentum", grounded=False)
     lines = [f"- {t['trend']}: {t['source']}/{t['key']} — {t['this_week']} this week "
              f"vs {t['prior_avg']}/week prior" for t in tracks[:10]]
-    return _answer("Computed from stored history:\n" + "\n".join(lines), [], kind="momentum")
+    return _answer("Computed from stored history:\n" + "\n".join(lines), [],
+                   kind="momentum", grounded=True)
 
 
 def _discussed_but_not_built(question: str, db_path=None) -> dict | None:
