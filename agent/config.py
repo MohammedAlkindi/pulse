@@ -46,7 +46,7 @@ class Config:
         return self.env(self.analysis.get("api_key_env", "ANTHROPIC_API_KEY"))
 
     def analysis_model(self) -> str:
-        return self.analysis.get("model", "claude-sonnet-4-6")
+        return self.analysis.get("model", "claude-opus-5")
 
     # ── raw access ─────────────────────────────────────────────────────────
 

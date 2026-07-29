@@ -18,7 +18,7 @@ sources:
     lookback_days: 7
 
 analysis:
-  model: "claude-sonnet-4-6"
+  model: "claude-opus-5"
   api_key_env: "ANTHROPIC_API_KEY"
 
 briefing:

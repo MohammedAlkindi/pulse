@@ -8,7 +8,7 @@ Assumptions:
 - We trim metadata fields to avoid blowing the context window on large event sets.
   Specifically, 'snippet' is truncated to 120 chars and 'metadata' is passed as-is
   since individual fields are already bounded upstream.
-- claude-sonnet-4-6 has a 200k context window; 500 events × ~300 tokens = ~150k tokens,
+- claude-opus-5 has a 1M-token context window; 500 events × ~300 tokens = ~150k tokens,
   which is within budget.  If you regularly exceed this, add chunking here.
 """
 

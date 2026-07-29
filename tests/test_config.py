@@ -45,3 +45,7 @@ class TestAccessors:
         monkeypatch.setenv("OTHER_KEY", "k")
         cfg = Config({"analysis": {"api_key_env": "OTHER_KEY"}})
         assert cfg.analysis_api_key() == "k"
+
+    def test_analysis_model_defaults_to_opus_5(self):
+        assert Config({}).analysis_model() == "claude-opus-5"
+        assert Config({"analysis": {"model": "claude-haiku-4-5"}}).analysis_model() == "claude-haiku-4-5"
