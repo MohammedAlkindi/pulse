@@ -1,15 +1,19 @@
+# Pulse configuration. Copy to config/pulse_config.yaml (gitignored).
+# Credentials NEVER go in this file — use environment variables or your OS
+# keychain (service "pulse"). See docs/SECURITY.md.
+
 sources:
   gmail:
     enabled: true
+    lookback_days: 7                      # first-run window; later runs use stored cursors
+    labels: ["INBOX", "SENT"]
     credentials_path: "config/credentials.json"
     token_path: "config/token.json"
-    lookback_days: 7
-    labels: ["INBOX", "SENT"]
 
   github:
     enabled: true
+    username: "your-github-username"      # required
     token_env: "GITHUB_TOKEN"
-    username: ""          # your GitHub username
     lookback_days: 7
 
   notion:
@@ -19,10 +23,21 @@ sources:
 
 analysis:
   model: "claude-opus-5"
-  api_key_env: "ANTHROPIC_API_KEY"
+  api_key_env: "ANTHROPIC_API_KEY"        # optional — Pulse works without it
 
 briefing:
-  enabled: true
-  schedule: "sunday_evening"
-  recipient_email: ""   # who receives the briefing
-  sender_email: ""      # must match the Gmail account used for OAuth
+  enabled: false                          # true + --send to email the review
+  recipient_email: "you@example.com"
+  sender_email: "you@example.com"
+
+# Declared initiatives. A workstream here absorbs a repository or Notion page
+# of the same name, so one workstream spans commits, pages, and email.
+workstreams:
+  - name: "OmanX"
+    aliases: ["oman scholars"]
+    sender_domains: ["partner.example"]
+
+# Domains you consider internal. Mail from anywhere else is labeled
+# "claimed by external sender" in the briefing.
+known_domains:
+  - "your-company.com"
