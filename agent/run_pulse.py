@@ -74,7 +74,7 @@ def main() -> None:
         print(f"ERROR: {exc}")
         sys.exit(1)
 
-    health = health_check(cfg)
+    health = health_check(cfg, require_analysis=not args.dry_run)
     if health["status"] == "failed":
         print("\nHealth check FAILED — Pulse cannot start:")
         for c in health["checks"]:

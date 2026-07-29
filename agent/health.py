@@ -37,9 +37,12 @@ def _file_check(path: Path, label: str, *, critical: bool) -> dict:
     return {"name": label, "status": status, "_critical": critical}
 
 
-def check(cfg: Config) -> dict:
+def check(cfg: Config, require_analysis: bool = True) -> dict:
     """
     Run all health checks and return a summary dict.
+
+    require_analysis: False for ingestion-only runs (--dry-run), where the
+    analysis key is unused and its absence should warn, not block.
 
     Returns:
         {
@@ -51,7 +54,7 @@ def check(cfg: Config) -> dict:
 
     # ── critical checks ──────────────────────────────────────────────────────
     api_key_env = cfg.analysis.get("api_key_env", "ANTHROPIC_API_KEY")
-    raw.append(_env_check(api_key_env, critical=True))
+    raw.append(_env_check(api_key_env, critical=require_analysis))
     raw.append(_dir_check(DATA_DIR, "data/ writable", critical=True))
     raw.append(_dir_check(LOGS_DIR, "logs/ writable", critical=True))
 
