@@ -14,6 +14,8 @@ evidence that does not exist.
 import re
 from datetime import date, datetime, timedelta
 
+from agent.analysis.sanitize import classify_sensitivity, most_severe, sanitize_for_markdown
+
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+|\n+")
 
 _WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
@@ -100,18 +102,21 @@ def _base_dt(event: dict) -> datetime:
         return datetime(1970, 1, 1)
 
 
-def extract_candidates(events: list[dict]) -> list[dict]:
+def extract_candidates(events: list[dict], known_domains: set[str] | None = None) -> list[dict]:
     """
     Pure pattern extraction. Each candidate:
-      {kind, text, evidence: [event_id], counterparty, due_date, week}
+      {kind, text, evidence: [event_id], counterparty, due_date, week, trust}
     Direction for commitments comes from the event type: first-person
     commitments in mail the user *sent* are the user's; in received mail
-    they belong to the sender.
+    they belong to the sender. `trust` records whether the source content
+    looked hostile, so the briefing can present it as claimed, not settled.
     """
     candidates = []
     for event in events:
         week = event.get("week_number", "")
         sent_by_user = event.get("event_type") == "email_sent"
+        trust = most_severe(event.get("sensitivity", ""),
+                            classify_sensitivity(event, known_domains))
 
         for sentence in _sentences(_event_text(event)):
             for kind, pattern in _PATTERNS:
@@ -128,11 +133,12 @@ def extract_candidates(events: list[dict]) -> list[dict]:
 
                 candidates.append({
                     "kind": resolved_kind,
-                    "text": sentence[:300],
+                    "text": sanitize_for_markdown(sentence, 300),
                     "evidence": [event["id"]],
                     "counterparty": _counterparty(event),
                     "due_date": due,
                     "week": week,
+                    "trust": trust,
                 })
                 break  # one kind per sentence: first pattern wins
 
@@ -144,10 +150,11 @@ def extract_candidates(events: list[dict]) -> list[dict]:
                     if due:
                         candidates.append({
                             "kind": "deadline",
-                            "text": sentence[:300],
+                            "text": sanitize_for_markdown(sentence, 300),
                             "evidence": [event["id"]],
                             "counterparty": _counterparty(event),
                             "due_date": due,
                             "week": week,
+                            "trust": trust,
                         })
     return candidates

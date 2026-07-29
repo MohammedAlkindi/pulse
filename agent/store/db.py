@@ -146,6 +146,18 @@ def get_events_for_weeks(weeks: list[str], db_path: Path | None = None) -> list[
     return [_row_to_event_dict(r) for r in rows]
 
 
+def get_events_for_weeks_full(weeks: list[str], db_path: Path | None = None) -> list[dict]:
+    """Complete event rows across several weeks (for extraction backfill)."""
+    if not weeks:
+        return []
+    placeholders = ",".join("?" * len(weeks))
+    sql = (f"SELECT * FROM events WHERE week_number IN ({placeholders}) AND deleted = 0 "
+           f"ORDER BY occurred_at, id")
+    with _conn(db_path) as con:
+        rows = con.execute(sql, weeks).fetchall()
+    return [_row_to_event_dict(r) for r in rows]
+
+
 def get_events_by_ids(ids: list[str], db_path: Path | None = None) -> list[dict]:
     if not ids:
         return []
@@ -345,13 +357,13 @@ def insert_item(item: dict, db_path: Path | None = None) -> None:
         con.execute(
             """INSERT INTO items
                (id, kind, text, workstream_id, counterparty, due_date, status,
-                evidence, confidence, first_week, last_week, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                evidence, confidence, first_week, last_week, created_at, updated_at, trust)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (item["id"], item["kind"], item["text"], item.get("workstream_id", ""),
              item.get("counterparty", ""), item.get("due_date", ""),
              item.get("status", "open"), json.dumps(item.get("evidence", [])),
              json.dumps(item.get("confidence", {})), item["first_week"],
-             item["last_week"], _now(), _now()),
+             item["last_week"], _now(), _now(), item.get("trust", "normal")),
         )
 
 

@@ -16,6 +16,7 @@ import anthropic
 
 from agent.analysis.citations import validate_citations
 from agent.analysis.momentum import momentum_summary_for_prompt
+from agent.analysis.sanitize import sanitize_for_prompt
 from agent.config import Config
 from agent.retry import with_retry
 
@@ -102,10 +103,13 @@ def _trim_events(events: list[dict]) -> list[dict]:
 
 
 def build_user_message(events: list[dict], momentum: dict | None) -> str:
-    """Serialize context with hard structural boundaries around untrusted text."""
+    """Serialize context with hard structural boundaries around untrusted text.
+    Text is sanitized first so it cannot forge those boundaries or invent ids."""
     blocks = []
     for e in _trim_events(events):
-        body = json.dumps({"title": e["title"], "metadata": e["metadata"]},
+        meta = {k: (sanitize_for_prompt(v, 200) if isinstance(v, str) else v)
+                for k, v in e["metadata"].items()}
+        body = json.dumps({"title": sanitize_for_prompt(e["title"], 200), "metadata": meta},
                           ensure_ascii=False)
         blocks.append(
             f'<event id="{e["id"]}" source="{e["source"]}" type="{e["event_type"]}" '

@@ -105,6 +105,9 @@ MIGRATIONS: list[tuple[int, str, list[str]]] = [
         "ALTER TABLE events ADD COLUMN workstream_id TEXT NOT NULL DEFAULT ''",
         "CREATE INDEX IF NOT EXISTS events_workstream_idx ON events (workstream_id, occurred_at)",
     ]),
+    (5, "item_trust", [
+        "ALTER TABLE items ADD COLUMN trust TEXT NOT NULL DEFAULT 'normal'",
+    ]),
 ]
 
 LATEST_VERSION = MIGRATIONS[-1][0]

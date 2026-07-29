@@ -33,12 +33,21 @@ def _setup_logging() -> None:
 
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Pulse — personal intelligence agent")
-    p.add_argument("--config", required=True, help="Path to pulse_config.yaml")
+    p.add_argument("--config", help="Path to pulse_config.yaml")
     p.add_argument("--dry-run", action="store_true",
                    help="Ingest only — no analysis, no briefing")
     p.add_argument("--send", action="store_true",
                    help="Deliver briefing via email (requires briefing.enabled: true)")
-    return p.parse_args()
+    p.add_argument("--demo", action="store_true",
+                   help="Run the synthetic corpus end-to-end; no credentials, writes to data/demo/")
+    p.add_argument("--export", metavar="PATH",
+                   help="Write a full JSON export of local data to PATH and exit")
+    p.add_argument("--purge", action="store_true",
+                   help="Delete all local Pulse data (events, items, briefings) and exit")
+    args = p.parse_args()
+    if not args.config and not (args.demo or args.export or args.purge):
+        p.error("--config is required unless running --demo, --export, or --purge")
+    return args
 
 
 def _print_summary(
@@ -68,12 +77,43 @@ def _print_summary(
     print()
 
 
+def _run_demo() -> None:
+    from agent.demo.runner import run, use_demo_paths
+
+    demo_root = use_demo_paths()
+    print(f"\n  Demo mode — synthetic data only, written to {demo_root}\n")
+    summary = run()
+    print(f"  Corpus events:     {summary['submitted']} submitted, {summary['new']} new")
+    print(f"  Workstreams:       {summary['workstreams']}")
+    print(f"  Open items:        {summary['open_items']}")
+    print(f"  Week:              {summary['week']}")
+    print(f"  Briefing:          {summary['briefing_path']}\n")
+
+
 def main() -> None:
     _setup_logging()
     args = _parse_args()
 
+    if args.demo:
+        ensure_dirs()
+        _run_demo()
+        return
+
     ensure_dirs()
     init_db()
+
+    if args.export:
+        import json
+        from agent.store.db import export_all
+        Path(args.export).write_text(json.dumps(export_all(), indent=2), encoding="utf-8")
+        print(f"\n  Exported all local Pulse data to {args.export}\n")
+        return
+
+    if args.purge:
+        from agent.store.db import purge_all
+        purge_all()
+        print("\n  All local Pulse data deleted (events, items, briefings, sync state).\n")
+        return
 
     try:
         cfg = load_config(args.config)

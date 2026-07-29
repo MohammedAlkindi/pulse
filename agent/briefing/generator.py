@@ -94,7 +94,14 @@ def _item_line(item: dict, cite: Citations, extra: str = "") -> str | None:
     who = f" ({item['counterparty']})" if item.get("counterparty") else ""
     conf = item.get("confidence", {}).get("level", "")
     conf_tag = f" · confidence {conf}" if conf else ""
-    return f"- **{label}{who}:** {item['text']}{extra}{conf_tag} {marker}"
+    # Trust is not confidence: an item can be well-evidenced yet come from a
+    # sender trying to manipulate the reader. Say so on the line itself.
+    trust = item.get("trust", "normal")
+    trust_tag = {
+        "suspicious": " · ⚠ UNVERIFIED — source content attempted instruction injection; treat as a claim, not a fact",
+        "external": " · claimed by external sender",
+    }.get(trust, "")
+    return f"- **{label}{who}:** {item['text']}{extra}{conf_tag}{trust_tag} {marker}"
 
 
 def _item_lines(items: list[dict], cite: Citations, empty: str) -> str:

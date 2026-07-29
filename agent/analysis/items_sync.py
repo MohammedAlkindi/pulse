@@ -77,6 +77,7 @@ def sync_items(candidates: list[dict], week: str,
                 "confidence": derive_confidence(evidence_events, week),
                 "first_week": candidate.get("week", week),
                 "last_week": week,
+                "trust": candidate.get("trust", "normal"),
             }
             db.insert_item(item, **kwargs)
             db.append_item_history(item_id, week, "created",

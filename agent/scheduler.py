@@ -98,8 +98,8 @@ def run_analysis_and_briefing(cfg: Config, week: str, send: bool = False,
     from agent.briefing.changes import approaching_deadlines, material_changes
     from agent.graph.workstreams import resolve_events
     from agent.store.db import (count_events_by_type_for_week, get_events_by_ids,
-                                get_events_for_weeks, get_unassigned_events,
-                                insert_briefing, list_items)
+                                get_events_for_weeks, get_events_for_weeks_full,
+                                get_unassigned_events, insert_briefing, list_items)
     from agent.store.models import Briefing as BriefingModel
     import uuid
 
@@ -115,12 +115,18 @@ def run_analysis_and_briefing(cfg: Config, week: str, send: bool = False,
     # 2 · computed momentum over the trailing window
     momentum = compute_momentum(get_events_for_weeks(weeks), weeks)
 
-    # 3 · deterministic extraction → persistent items ledger
-    candidates = extract_candidates(events)
+    # 3 · deterministic extraction → persistent items ledger.
+    # Runs over the whole trailing window, not just this week: on a first run
+    # (or after a gap) the backlog of commitments and blockers still surfaces,
+    # and sync_items merges anything already known.
+    window_events = get_events_for_weeks_full(weeks)
+    window_index = {e["id"]: e for e in window_events}
+    known_domains = set(cfg.get("known_domains", default=[]) or [])
+    candidates = extract_candidates(window_events, known_domains=known_domains)
     for candidate in candidates:
-        anchor = event_index.get(candidate["evidence"][0], {})
+        anchor = window_index.get(candidate["evidence"][0], {})
         candidate["workstream_id"] = anchor.get("workstream_id", "")
-    item_stats = sync_items(candidates, week, event_index=event_index)
+    item_stats = sync_items(candidates, week, event_index=window_index)
     logger.info("[items] %d created, %d re-seen.", item_stats["created"], item_stats["reseen"])
 
     # 4 · cited model analysis (validated against the evidence context)

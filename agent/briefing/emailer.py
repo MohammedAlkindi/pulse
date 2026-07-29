@@ -12,8 +12,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 
+from agent import paths
 from agent.config import Config
-from agent.paths import BRIEFING_DRAFT
 from agent.retry import with_retry
 
 logger = logging.getLogger(__name__)
@@ -64,10 +64,11 @@ def _send(service, message: dict) -> dict:
 
 def save_draft(content: str) -> Path:
     """Write briefing to logs/briefing_draft.md. Always called before send."""
-    BRIEFING_DRAFT.parent.mkdir(parents=True, exist_ok=True)
-    BRIEFING_DRAFT.write_text(content, encoding="utf-8")
-    logger.info("[emailer] briefing draft saved to %s", BRIEFING_DRAFT)
-    return BRIEFING_DRAFT
+    draft = paths.BRIEFING_DRAFT  # resolved at call time so demo mode can retarget
+    draft.parent.mkdir(parents=True, exist_ok=True)
+    draft.write_text(content, encoding="utf-8")
+    logger.info("[emailer] briefing draft saved to %s", draft)
+    return draft
 
 
 def deliver(content: str, week: str, cfg: Config, send: bool = False) -> bool:
