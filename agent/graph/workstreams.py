@@ -51,6 +51,16 @@ def seed_from_config(cfg: Config, db_path=None) -> None:
             db.add_workstream_member(ws_id, "sender_domain", str(domain).lower(), **kwargs)
 
 
+def _claim_alias(ws_id: str, alias: str, member_map: dict, kwargs: dict) -> None:
+    """Register an alias only if unclaimed. The in-memory map must mirror what
+    the database actually accepted, or resolution becomes run-order dependent."""
+    key = ("alias", alias)
+    if key in member_map:
+        return
+    db.add_workstream_member(ws_id, "alias", alias, **kwargs)
+    member_map[key] = ws_id
+
+
 def _ensure_anchor(event: dict, member_map: dict, db_path=None) -> str | None:
     """Create the deterministic anchor workstream for repo/Notion events."""
     kwargs = {"db_path": db_path} if db_path else {}
@@ -62,13 +72,16 @@ def _ensure_anchor(event: dict, member_map: dict, db_path=None) -> str | None:
             return None
         key = ("github_repo", repo)
         if key not in member_map:
-            ws_id = f"repo:{repo}"
             name = repo.split("/")[-1]
-            db.upsert_workstream(ws_id, name, "repository", **kwargs)
+            # A user-declared initiative with this name owns the repo too, so
+            # one workstream spans code, pages, and mail instead of splitting.
+            declared = member_map.get(("alias", name.lower()))
+            ws_id = declared or f"repo:{repo}"
+            if not declared:
+                db.upsert_workstream(ws_id, name, "repository", **kwargs)
             db.add_workstream_member(ws_id, "github_repo", repo, **kwargs)
-            db.add_workstream_member(ws_id, "alias", name.lower(), **kwargs)
+            _claim_alias(ws_id, name.lower(), member_map, kwargs)
             member_map[key] = ws_id
-            member_map[("alias", name.lower())] = ws_id
         return member_map[key]
 
     if event["source"] == "notion":
@@ -86,12 +99,12 @@ def _ensure_anchor(event: dict, member_map: dict, db_path=None) -> str | None:
             key = ("notion_page", page_id)
             if key not in member_map:
                 title = (event.get("title") or "").strip() or f"Notion page {page_id[:8]}"
-                ws_id = f"notion-page:{page_id}"
-                db.upsert_workstream(ws_id, title, "notion_page", **kwargs)
+                declared = member_map.get(("alias", title.lower()))
+                ws_id = declared or f"notion-page:{page_id}"
+                if not declared:
+                    db.upsert_workstream(ws_id, title, "notion_page", **kwargs)
                 db.add_workstream_member(ws_id, "notion_page", page_id, **kwargs)
-                if title:
-                    db.add_workstream_member(ws_id, "alias", title.lower(), **kwargs)
-                    member_map[("alias", title.lower())] = ws_id
+                _claim_alias(ws_id, title.lower(), member_map, kwargs)
                 member_map[key] = ws_id
             return member_map[key]
     return None

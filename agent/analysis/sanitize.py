@@ -16,8 +16,11 @@ than established.
 
 import re
 
-_TAGISH = re.compile(r"</?\s*(event|events|system|assistant|user|instructions?|tool_use|tool_result)\b[^>]*>",
-                     re.IGNORECASE)
+_TAGISH = re.compile(
+    r"</?\s*(event|events|record|records|system|assistant|user|human|"
+    r"instructions?|tool_use|tool_result|context)\b[^>]*>",
+    re.IGNORECASE,
+)
 _HTML_TAG = re.compile(r"<[^>\n]{1,200}>")
 _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 _MD_LINK = re.compile(r"\[([^\]]{0,200})\]\((?:javascript|data|vbscript):[^)]*\)", re.IGNORECASE)

@@ -128,12 +128,15 @@ def build_corpus() -> list[Event]:
 
 
 GROUND_TRUTH = {
+    # With OmanX declared as an initiative in the demo config, the repo, the
+    # Notion database, and the launch email thread all resolve into that one
+    # workstream — the cross-source grouping is the point. ProofX is not
+    # declared, so it anchors on its repository.
     "workstreams": {
-        "github:demo:omanx-w0a": "repo:demo/omanx",
+        "github:demo:omanx-w0a": "custom:omanx",
         "github:demo:proofx-w2": "repo:demo/proofx",
-        # Launch thread links to OmanX via the alias in its subject text.
-        "gmail:demo:launch-1": "repo:demo/omanx",
-        "gmail:demo:launch-2": "repo:demo/omanx",
+        "gmail:demo:launch-1": "custom:omanx",
+        "gmail:demo:launch-2": "custom:omanx",
     },
     "user_commitment": {
         "text_contains": "final scholar list",

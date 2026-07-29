@@ -191,13 +191,29 @@ def count_events_by_type_for_week(week: str, db_path: Path | None = None) -> dic
     return result
 
 
+_STOPWORDS = {
+    "the", "a", "an", "and", "or", "of", "in", "on", "at", "to", "for", "with",
+    "what", "which", "who", "whom", "when", "where", "why", "how", "did", "do",
+    "does", "was", "were", "is", "are", "be", "been", "have", "has", "had",
+    "i", "me", "my", "we", "our", "you", "your", "it", "that", "this", "these",
+    "about", "from", "but", "never", "not", "any", "all", "some", "week", "weeks",
+}
+
+
 def search_events(query: str, limit: int = 50, db_path: Path | None = None) -> list[dict]:
-    """Full-text search over titles and snippets. Query syntax is neutralised:
-    every token is quoted so FTS operators in user input cannot break the query."""
-    tokens = [t.replace('"', "") for t in query.split() if t.strip('"')]
+    """Full-text search over titles and snippets.
+
+    Query syntax is neutralised (every token quoted, so FTS operators in user
+    input cannot break the query) and stopwords are dropped — otherwise a
+    question like "what happened in X" matches every row via its filler words
+    and search appears to answer questions it cannot.
+    """
+    raw = [t.replace('"', "").strip(".,;:!?") for t in query.lower().split()]
+    tokens = [t for t in raw if len(t) > 2 and t not in _STOPWORDS]
     if not tokens:
         return []
-    match = " OR ".join(f'"{t}"' for t in tokens)
+    # AND semantics: every meaningful term must appear.
+    match = " AND ".join(f'"{t}"' for t in tokens)
     sql = """
         SELECT e.* FROM events_fts f
         JOIN events e ON e.id = f.event_id

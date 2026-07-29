@@ -77,16 +77,31 @@ class TestWorkstreamLinking:
         for event_id, expected in GROUND_TRUTH["workstreams"].items():
             assert rows.get(event_id) == expected, f"{event_id} → {rows.get(event_id)}"
 
-    def test_precision_no_event_lands_in_a_foreign_workstream(self, corpus_db):
+    def test_precision_every_repo_maps_to_exactly_one_workstream(self, corpus_db):
+        by_repo: dict[str, set[str]] = {}
         for event in db.get_events_for_weeks_full(trailing_weeks(ANCHOR, 6), corpus_db):
-            ws = event["workstream_id"]
             repo = (event.get("metadata") or {}).get("repo")
-            if repo and ws:
-                assert ws == f"repo:{repo}"
+            if repo and event["workstream_id"]:
+                by_repo.setdefault(repo, set()).add(event["workstream_id"])
+        assert all(len(ws) == 1 for ws in by_repo.values()), by_repo
 
     def test_cross_source_workstream_spans_github_notion_and_gmail(self, corpus_db):
-        events = db.get_events_for_workstream("repo:demo/omanx", db_path=corpus_db)
+        events = db.get_events_for_workstream("custom:omanx", db_path=corpus_db)
         assert {e["source"] for e in events} >= {"github", "gmail"}
+
+    def test_resolution_is_deterministic_across_runs(self, tmp_path, monkeypatch):
+        """Same corpus, fresh database, identical assignments — no run-order drift."""
+        results = []
+        for name in ("a.db", "b.db"):
+            path = tmp_path / name
+            monkeypatch.setattr(paths, "DB_PATH", path)
+            db.init_db(path)
+            db.upsert_events(build_corpus(), path)
+            weeks = trailing_weeks(ANCHOR, 6)
+            resolve_events(db.get_unassigned_events(weeks, path), cfg=DEMO_CONFIG, db_path=path)
+            results.append({e["id"]: e["workstream_id"]
+                            for e in db.get_events_for_weeks_full(weeks, path)})
+        assert results[0] == results[1]
 
     def test_injection_email_does_not_hijack_a_workstream(self, corpus_db):
         for event_id in GROUND_TRUTH["injection_ids"]:
