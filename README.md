@@ -1,7 +1,10 @@
 # Pulse
 
+[![CI](https://github.com/MohammedAlkindi/Pulse/actions/workflows/ci.yml/badge.svg)](https://github.com/MohammedAlkindi/Pulse/actions/workflows/ci.yml)
+
 Personal intelligence agent. Ingests activity from Gmail, GitHub, and Notion,
-analyses patterns with Claude, and delivers a weekly Markdown briefing.
+computes week-over-week momentum from stored history, has Claude explain the
+patterns, and delivers a weekly Markdown briefing.
 
 Runs entirely locally. No server. No cloud storage. SQLite only.
 
@@ -11,9 +14,15 @@ Runs entirely locally. No server. No cloud storage. SQLite only.
 
 1. **Ingests** — fetches the last 7 days of activity from your connected sources.
 2. **Stores** — writes normalised events to a local SQLite database (`data/pulse.db`).
-3. **Analyses** — sends event summaries (never body content) to Claude to identify themes, active projects, drifting areas, and next-week priorities.
-4. **Briefs** — generates a Markdown briefing and writes it to `logs/briefing_draft.md`.
-5. **Delivers** — optionally sends the briefing via Gmail when `--send` is passed.
+3. **Computes** — classifies momentum per track (GitHub repo, Notion page, Gmail
+   sender domain) across the trailing five weeks: rising, steady, falling,
+   stalled, or new. Calculated from history, not asked of the model.
+4. **Analyses** — sends event summaries (never body content) plus the computed
+   momentum to Claude to identify themes, active projects, drifting areas, and
+   next-week priorities, grounded in the numbers.
+5. **Briefs** — generates a Markdown briefing (including a Momentum table) and
+   writes it to `logs/briefing_draft.md`.
+6. **Delivers** — optionally sends the briefing via Gmail when `--send` is passed.
 
 ---
 
@@ -128,7 +137,8 @@ pulse/
 │   │   ├── db.py             ← SQLite CRUD
 │   │   └── models.py         ← Event / Briefing dataclasses
 │   ├── analysis/
-│   │   └── analyzer.py       ← Claude API analysis
+│   │   ├── analyzer.py       ← Claude API analysis
+│   │   └── momentum.py       ← deterministic week-over-week trends
 │   └── briefing/
 │       ├── generator.py      ← Markdown builder
 │       └── emailer.py        ← Gmail delivery
@@ -142,6 +152,20 @@ pulse/
 ├── setup_scheduler.ps1
 └── README.md
 ```
+
+---
+
+## Tests
+
+```powershell
+.venv\Scripts\Activate.ps1
+pip install -r requirements-dev.txt
+pytest
+```
+
+The suite covers the pure core — week keying, store CRUD, config, momentum
+classification, and briefing rendering — with no network calls. CI runs it on
+every push.
 
 ---
 
