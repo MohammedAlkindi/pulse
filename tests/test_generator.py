@@ -42,3 +42,22 @@ class TestGenerate:
         briefing = generate("2026-W31", analysis, {})
         assert "## Data Quality Notes" in briefing
         assert "- gmail disabled" in briefing
+
+    def test_momentum_section_renders_computed_tracks(self):
+        momentum = {
+            "weeks": ["2026-W28", "2026-W29", "2026-W30", "2026-W31"],
+            "tracks": [
+                {"source": "github", "key": "ProofX", "counts": [4, 3, 5, 0],
+                 "this_week": 0, "prior_avg": 4.0, "trend": "stalled"},
+                {"source": "gmail", "key": "ucsd.edu", "counts": [1, 1, 2, 4],
+                 "this_week": 4, "prior_avg": 1.33, "trend": "rising"},
+            ],
+        }
+        briefing = generate("2026-W31", ANALYSIS, {}, momentum)
+        assert "## Momentum" in briefing
+        assert "| ■ stalled | github/ProofX | 0 | 4.0 |" in briefing
+        assert "| ↑ rising | gmail/ucsd.edu | 4 | 1.33 |" in briefing
+
+    def test_momentum_section_absent_without_tracks(self):
+        briefing = generate("2026-W31", ANALYSIS, {}, {"weeks": [], "tracks": []})
+        assert "## Momentum" not in briefing

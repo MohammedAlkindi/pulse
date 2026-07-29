@@ -2,6 +2,8 @@
 
 from datetime import datetime, timezone
 
+_TREND_MARKS = {"rising": "↑", "steady": "→", "falling": "↓", "stalled": "■", "new": "✦"}
+
 
 def _bullet_list(items: list[str], fallback: str = "_None identified._") -> str:
     if not items:
@@ -9,10 +11,30 @@ def _bullet_list(items: list[str], fallback: str = "_None identified._") -> str:
     return "\n".join(f"- {item}" for item in items)
 
 
+def _momentum_section(momentum: dict | None) -> str:
+    tracks = (momentum or {}).get("tracks", [])
+    if not tracks:
+        return ""
+    rows = "\n".join(
+        f"| {_TREND_MARKS.get(t['trend'], '?')} {t['trend']} | {t['source']}/{t['key']} "
+        f"| {t['this_week']} | {t['prior_avg']} |"
+        for t in tracks[:12]
+    )
+    return f"""
+## Momentum
+_Computed from {len(momentum['weeks'])} weeks of stored history — not model output._
+
+| Trend | Track | This week | Prior avg |
+|-------|-------|-----------|-----------|
+{rows}
+"""
+
+
 def generate(
     week: str,
     analysis: dict,
     event_counts: dict[str, dict[str, int]],
+    momentum: dict | None = None,
 ) -> str:
     """
     Assemble the briefing Markdown.
@@ -60,7 +82,7 @@ _Generated {today} · Review before acting on any item_
 | Gmail | Sent | {gmail_sent} |
 | GitHub | Events | {github_total} |
 | Notion | Pages | {notion_total} |
-
+{_momentum_section(momentum)}
 ## Drifting
 
 {drifting}

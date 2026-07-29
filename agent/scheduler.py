@@ -63,16 +63,20 @@ def run_analysis_and_briefing(cfg: Config, week: str, send: bool = False) -> str
     Returns the briefing content string, or None if generation failed.
     """
     from agent.analysis import analyzer
+    from agent.analysis.momentum import compute_momentum, momentum_summary_for_prompt, trailing_weeks
     from agent.briefing import emailer, generator
-    from agent.store.db import count_events_by_type_for_week, insert_briefing
+    from agent.store.db import count_events_by_type_for_week, get_events_for_weeks, insert_briefing
     from agent.store.models import Briefing as BriefingModel
     import uuid
 
     events = get_events_for_week(week)
     counts = count_events_by_type_for_week(week)
 
-    analysis = analyzer.analyze(events, cfg)
-    content = generator.generate(week, analysis, counts)
+    weeks = trailing_weeks(datetime.now(timezone.utc))
+    momentum = compute_momentum(get_events_for_weeks(weeks), weeks)
+
+    analysis = analyzer.analyze(events, cfg, momentum_summary_for_prompt(momentum))
+    content = generator.generate(week, analysis, counts, momentum)
 
     briefing_id = str(uuid.uuid4())
     b = BriefingModel(id=briefing_id, week_number=week, content=content)

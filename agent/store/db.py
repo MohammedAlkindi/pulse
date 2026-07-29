@@ -101,6 +101,26 @@ def count_events_for_week(week: str, db_path: Path = DB_PATH) -> dict[str, int]:
     return {row["source"]: row["n"] for row in rows}
 
 
+def get_events_for_weeks(weeks: list[str], db_path: Path = DB_PATH) -> list[dict]:
+    """Light rows (source, title, metadata, week_number) across several weeks,
+    for momentum computation."""
+    if not weeks:
+        return []
+    placeholders = ",".join("?" * len(weeks))
+    sql = f"SELECT source, title, metadata, week_number FROM events WHERE week_number IN ({placeholders})"
+    with _conn(db_path) as con:
+        rows = con.execute(sql, weeks).fetchall()
+    result = []
+    for row in rows:
+        d = dict(row)
+        try:
+            d["metadata"] = json.loads(d["metadata"] or "{}")
+        except json.JSONDecodeError:
+            d["metadata"] = {}
+        result.append(d)
+    return result
+
+
 def count_events_by_type_for_week(week: str, db_path: Path = DB_PATH) -> dict[str, dict[str, int]]:
     """Return {source: {event_type: count}} for one week."""
     sql = """

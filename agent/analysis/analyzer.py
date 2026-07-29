@@ -30,8 +30,15 @@ Analyze the provided events and identify:
   3. What appears to be drifting or neglected
   4. What deserves attention next week
 
-Be specific and factual. Every observation must trace to at least one event in the data.
-Do not invent observations. If data is sparse, say so explicitly in data_quality_notes.\
+You are also given COMPUTED MOMENTUM lines derived from multiple weeks of stored
+history. Those lines are calculated facts, not model output: ground 'drifting' in the
+STALLED and FALLING tracks (name them), and let RISING and NEW tracks inform themes
+and next-week attention. Do not claim something is drifting unless the momentum data
+or this week's events support it.
+
+Be specific and factual. Every observation must trace to at least one event or
+momentum line. Do not invent observations. If data is sparse, say so explicitly in
+data_quality_notes.\
 """
 
 _ANALYSIS_TOOL = {
@@ -98,7 +105,12 @@ def _trim_events(events: list[dict]) -> list[dict]:
 
 
 @with_retry(label="Claude analysis", max_attempts=3, retryable=(anthropic.APIError,))
-def _call_claude(client: anthropic.Anthropic, model: str, events_json: str) -> dict:
+def _call_claude(client: anthropic.Anthropic, model: str, events_json: str,
+                 momentum_summary: str | None) -> dict:
+    momentum_block = (
+        f"COMPUTED MOMENTUM (from stored multi-week history):\n{momentum_summary}\n\n"
+        if momentum_summary else ""
+    )
     response = client.messages.create(
         model=model,
         max_tokens=2048,
@@ -108,7 +120,7 @@ def _call_claude(client: anthropic.Anthropic, model: str, events_json: str) -> d
         messages=[
             {
                 "role": "user",
-                "content": f"Here are this week's events:\n\n{events_json}",
+                "content": f"{momentum_block}Here are this week's events:\n\n{events_json}",
             }
         ],
     )
@@ -122,9 +134,9 @@ def _call_claude(client: anthropic.Anthropic, model: str, events_json: str) -> d
     return _EMPTY_ANALYSIS
 
 
-def analyze(events: list[dict], cfg: Config) -> dict:
+def analyze(events: list[dict], cfg: Config, momentum_summary: str | None = None) -> dict:
     """
-    Run Claude analysis on a week's events.
+    Run Claude analysis on a week's events, grounded in computed momentum.
     Returns the structured analysis dict; never raises — returns empty analysis on failure.
     """
     if not events:
@@ -142,7 +154,7 @@ def analyze(events: list[dict], cfg: Config) -> dict:
     events_json = json.dumps(_trim_events(events), indent=2)
 
     try:
-        result = _call_claude(client, model, events_json)
+        result = _call_claude(client, model, events_json, momentum_summary)
         logger.info("[analyzer] analysis complete — %d themes, %d active projects",
                     len(result.get("themes", [])), len(result.get("active_projects", [])))
         return result
