@@ -85,25 +85,68 @@ def _ingest_source(name: str, cfg: Config, fetcher=None, now: datetime | None = 
 def run_analysis_and_briefing(cfg: Config, week: str, send: bool = False,
                               source_status: dict[str, dict] | None = None) -> str | None:
     """
-    Fetch events for the week, run analysis, extract items, generate briefing.
-    Returns the briefing content string, or None if generation failed.
+    The full graph pipeline for one week: workstream resolution, momentum,
+    item extraction and persistence, cited analysis, and the evidence-backed
+    briefing. Returns the briefing content string.
     """
+    from datetime import date
     from agent.analysis import analyzer
-    from agent.analysis.momentum import compute_momentum, momentum_summary_for_prompt, trailing_weeks
+    from agent.analysis.extract import extract_candidates
+    from agent.analysis.items_sync import stale_open_items, sync_items
+    from agent.analysis.momentum import compute_momentum, trailing_weeks
     from agent.briefing import emailer, generator
-    from agent.store.db import count_events_by_type_for_week, get_events_for_weeks, insert_briefing
+    from agent.briefing.changes import approaching_deadlines, material_changes
+    from agent.graph.workstreams import resolve_events
+    from agent.store.db import (count_events_by_type_for_week, get_events_by_ids,
+                                get_events_for_weeks, get_unassigned_events,
+                                insert_briefing, list_items)
     from agent.store.models import Briefing as BriefingModel
     import uuid
 
+    weeks = trailing_weeks(datetime.now(timezone.utc))
+
+    # 1 · connect events into workstreams (deterministic; ambiguity queues)
+    resolve_events(get_unassigned_events(weeks), cfg=cfg)
+
     events = get_events_for_week(week)
     counts = count_events_by_type_for_week(week)
+    event_index = {e["id"]: e for e in events}
 
-    weeks = trailing_weeks(datetime.now(timezone.utc))
+    # 2 · computed momentum over the trailing window
     momentum = compute_momentum(get_events_for_weeks(weeks), weeks)
 
-    analysis = analyzer.analyze(events, cfg, momentum_summary_for_prompt(momentum))
-    content = generator.generate(week, analysis, counts, momentum,
-                                 source_status=source_status)
+    # 3 · deterministic extraction → persistent items ledger
+    candidates = extract_candidates(events)
+    for candidate in candidates:
+        anchor = event_index.get(candidate["evidence"][0], {})
+        candidate["workstream_id"] = anchor.get("workstream_id", "")
+    item_stats = sync_items(candidates, week, event_index=event_index)
+    logger.info("[items] %d created, %d re-seen.", item_stats["created"], item_stats["reseen"])
+
+    # 4 · cited model analysis (validated against the evidence context)
+    analysis = analyzer.analyze(events, cfg, momentum)
+
+    # 5 · assemble ledger views for the briefing
+    open_items = list_items(status="open")
+    deadlines = approaching_deadlines(open_items, date.today())
+    stale = stale_open_items(week, min_weeks_open=2)
+    changes = material_changes(week)
+
+    # The evidence index must cover everything the briefing may cite,
+    # including items whose evidence predates this week.
+    cited_ids: set[str] = set(event_index)
+    for collection in (open_items, stale, *changes.values()):
+        for item in collection:
+            cited_ids.update(item.get("evidence", []))
+    missing = [i for i in cited_ids if i not in event_index]
+    for row in get_events_by_ids(missing):
+        event_index[row["id"]] = row
+
+    content = generator.generate(
+        week, analysis, counts, momentum,
+        changes=changes, open_items=open_items, deadlines=deadlines,
+        stale_items=stale, event_index=event_index, source_status=source_status,
+    )
 
     briefing_id = str(uuid.uuid4())
     b = BriefingModel(id=briefing_id, week_number=week, content=content)

@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator
 
-from agent.paths import DB_PATH
+from agent import paths
 from agent.store.migrations import apply_migrations
 from agent.store.models import Briefing, Event
 
@@ -21,8 +21,10 @@ def _now() -> str:
 
 
 @contextmanager
-def _conn(db_path: Path = DB_PATH) -> Generator[sqlite3.Connection, None, None]:
-    con = sqlite3.connect(db_path)
+def _conn(db_path: Path | None = None) -> Generator[sqlite3.Connection, None, None]:
+    # Resolved at call time (not def time) so demo mode and tests can
+    # retarget agent.paths.DB_PATH.
+    con = sqlite3.connect(db_path or paths.DB_PATH)
     con.row_factory = sqlite3.Row
     try:
         yield con
@@ -34,11 +36,12 @@ def _conn(db_path: Path = DB_PATH) -> Generator[sqlite3.Connection, None, None]:
         con.close()
 
 
-def init_db(db_path: Path = DB_PATH) -> None:
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    with _conn(db_path) as con:
+def init_db(db_path: Path | None = None) -> None:
+    path = Path(db_path or paths.DB_PATH)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with _conn(path) as con:
         apply_migrations(con)
-    logger.debug("Database initialised at %s", db_path)
+    logger.debug("Database initialised at %s", path)
 
 
 def _parse_meta(raw: str | None) -> dict:
@@ -67,7 +70,7 @@ def _fts_text(event: Event) -> tuple[str, str]:
 
 # ── events ──────────────────────────────────────────────────────────────────
 
-def upsert_events(events: list[Event], db_path: Path = DB_PATH) -> tuple[int, int]:
+def upsert_events(events: list[Event], db_path: Path | None = None) -> tuple[int, int]:
     """
     Idempotent, transactional bulk write. New events insert; existing events
     whose content hash changed are updated in place (ingested_at preserved,
@@ -117,20 +120,20 @@ def upsert_events(events: list[Event], db_path: Path = DB_PATH) -> tuple[int, in
     return new, updated
 
 
-def insert_event(event: Event, db_path: Path = DB_PATH) -> bool:
+def insert_event(event: Event, db_path: Path | None = None) -> bool:
     """Single-event convenience wrapper; True when the event was new."""
     new, _ = upsert_events([event], db_path)
     return new > 0
 
 
-def get_events_for_week(week: str, db_path: Path = DB_PATH) -> list[dict]:
+def get_events_for_week(week: str, db_path: Path | None = None) -> list[dict]:
     sql = "SELECT * FROM events WHERE week_number = ? AND deleted = 0 ORDER BY occurred_at, id"
     with _conn(db_path) as con:
         rows = con.execute(sql, (week,)).fetchall()
     return [_row_to_event_dict(r) for r in rows]
 
 
-def get_events_for_weeks(weeks: list[str], db_path: Path = DB_PATH) -> list[dict]:
+def get_events_for_weeks(weeks: list[str], db_path: Path | None = None) -> list[dict]:
     """Light rows (source, title, metadata, week_number) across several weeks,
     for momentum computation."""
     if not weeks:
@@ -143,7 +146,7 @@ def get_events_for_weeks(weeks: list[str], db_path: Path = DB_PATH) -> list[dict
     return [_row_to_event_dict(r) for r in rows]
 
 
-def get_events_by_ids(ids: list[str], db_path: Path = DB_PATH) -> list[dict]:
+def get_events_by_ids(ids: list[str], db_path: Path | None = None) -> list[dict]:
     if not ids:
         return []
     placeholders = ",".join("?" * len(ids))
@@ -153,7 +156,7 @@ def get_events_by_ids(ids: list[str], db_path: Path = DB_PATH) -> list[dict]:
     return [_row_to_event_dict(r) for r in rows]
 
 
-def count_events_for_week(week: str, db_path: Path = DB_PATH) -> dict[str, int]:
+def count_events_for_week(week: str, db_path: Path | None = None) -> dict[str, int]:
     sql = ("SELECT source, COUNT(*) as n FROM events "
            "WHERE week_number = ? AND deleted = 0 GROUP BY source")
     with _conn(db_path) as con:
@@ -161,7 +164,7 @@ def count_events_for_week(week: str, db_path: Path = DB_PATH) -> dict[str, int]:
     return {row["source"]: row["n"] for row in rows}
 
 
-def count_events_by_type_for_week(week: str, db_path: Path = DB_PATH) -> dict[str, dict[str, int]]:
+def count_events_by_type_for_week(week: str, db_path: Path | None = None) -> dict[str, dict[str, int]]:
     """Return {source: {event_type: count}} for one week."""
     sql = """
         SELECT source, event_type, COUNT(*) as n
@@ -176,7 +179,7 @@ def count_events_by_type_for_week(week: str, db_path: Path = DB_PATH) -> dict[st
     return result
 
 
-def search_events(query: str, limit: int = 50, db_path: Path = DB_PATH) -> list[dict]:
+def search_events(query: str, limit: int = 50, db_path: Path | None = None) -> list[dict]:
     """Full-text search over titles and snippets. Query syntax is neutralised:
     every token is quoted so FTS operators in user input cannot break the query."""
     tokens = [t.replace('"', "") for t in query.split() if t.strip('"')]
@@ -197,14 +200,14 @@ def search_events(query: str, limit: int = 50, db_path: Path = DB_PATH) -> list[
 
 # ── sync state ──────────────────────────────────────────────────────────────
 
-def get_sync_state(source: str, db_path: Path = DB_PATH) -> dict | None:
+def get_sync_state(source: str, db_path: Path | None = None) -> dict | None:
     with _conn(db_path) as con:
         row = con.execute("SELECT * FROM sync_state WHERE source = ?", (source,)).fetchone()
     return dict(row) if row else None
 
 
 def set_sync_state(source: str, *, cursor_ts: str | None = None, status: str,
-                   error: str = "", db_path: Path = DB_PATH) -> None:
+                   error: str = "", db_path: Path | None = None) -> None:
     now = _now()
     with _conn(db_path) as con:
         existing = con.execute("SELECT cursor_ts FROM sync_state WHERE source = ?", (source,)).fetchone()
@@ -226,7 +229,7 @@ def set_sync_state(source: str, *, cursor_ts: str | None = None, status: str,
             )
 
 
-def all_sync_states(db_path: Path = DB_PATH) -> list[dict]:
+def all_sync_states(db_path: Path | None = None) -> list[dict]:
     with _conn(db_path) as con:
         rows = con.execute("SELECT * FROM sync_state ORDER BY source").fetchall()
     return [dict(r) for r in rows]
@@ -234,7 +237,7 @@ def all_sync_states(db_path: Path = DB_PATH) -> list[dict]:
 
 # ── workstreams ─────────────────────────────────────────────────────────────
 
-def upsert_workstream(ws_id: str, name: str, kind: str, db_path: Path = DB_PATH) -> None:
+def upsert_workstream(ws_id: str, name: str, kind: str, db_path: Path | None = None) -> None:
     with _conn(db_path) as con:
         con.execute(
             """INSERT INTO workstreams (id, name, kind, created_at) VALUES (?, ?, ?, ?)
@@ -244,7 +247,7 @@ def upsert_workstream(ws_id: str, name: str, kind: str, db_path: Path = DB_PATH)
 
 
 def add_workstream_member(ws_id: str, member_type: str, member_key: str,
-                          origin: str = "deterministic", db_path: Path = DB_PATH) -> None:
+                          origin: str = "deterministic", db_path: Path | None = None) -> None:
     with _conn(db_path) as con:
         con.execute(
             """INSERT OR IGNORE INTO workstream_members
@@ -253,13 +256,13 @@ def add_workstream_member(ws_id: str, member_type: str, member_key: str,
         )
 
 
-def get_member_map(db_path: Path = DB_PATH) -> dict[tuple[str, str], str]:
+def get_member_map(db_path: Path | None = None) -> dict[tuple[str, str], str]:
     with _conn(db_path) as con:
         rows = con.execute("SELECT workstream_id, member_type, member_key FROM workstream_members").fetchall()
     return {(r["member_type"], r["member_key"]): r["workstream_id"] for r in rows}
 
 
-def list_workstreams(db_path: Path = DB_PATH) -> list[dict]:
+def list_workstreams(db_path: Path | None = None) -> list[dict]:
     with _conn(db_path) as con:
         rows = con.execute("SELECT * FROM workstreams ORDER BY name").fetchall()
     return [dict(r) for r in rows]
@@ -267,7 +270,7 @@ def list_workstreams(db_path: Path = DB_PATH) -> list[dict]:
 
 def add_link_suggestion(ws_id: str, member_type: str, member_key: str,
                         evidence: list[str], confidence: float,
-                        db_path: Path = DB_PATH) -> str:
+                        db_path: Path | None = None) -> str:
     sug_id = str(uuid.uuid4())
     with _conn(db_path) as con:
         con.execute(
@@ -279,7 +282,7 @@ def add_link_suggestion(ws_id: str, member_type: str, member_key: str,
     return sug_id
 
 
-def list_link_suggestions(status: str = "pending", db_path: Path = DB_PATH) -> list[dict]:
+def list_link_suggestions(status: str = "pending", db_path: Path | None = None) -> list[dict]:
     with _conn(db_path) as con:
         rows = con.execute(
             "SELECT * FROM link_suggestions WHERE status = ? ORDER BY confidence DESC", (status,)
@@ -292,7 +295,7 @@ def list_link_suggestions(status: str = "pending", db_path: Path = DB_PATH) -> l
     return result
 
 
-def assign_event_workstreams(assignments: dict[str, str], db_path: Path = DB_PATH) -> None:
+def assign_event_workstreams(assignments: dict[str, str], db_path: Path | None = None) -> None:
     with _conn(db_path) as con:
         con.executemany(
             "UPDATE events SET workstream_id = ? WHERE id = ?",
@@ -300,7 +303,7 @@ def assign_event_workstreams(assignments: dict[str, str], db_path: Path = DB_PAT
         )
 
 
-def get_unassigned_events(weeks: list[str], db_path: Path = DB_PATH) -> list[dict]:
+def get_unassigned_events(weeks: list[str], db_path: Path | None = None) -> list[dict]:
     if not weeks:
         return []
     placeholders = ",".join("?" * len(weeks))
@@ -311,7 +314,7 @@ def get_unassigned_events(weeks: list[str], db_path: Path = DB_PATH) -> list[dic
     return [_row_to_event_dict(r) for r in rows]
 
 
-def get_events_for_workstream(ws_id: str, limit: int = 200, db_path: Path = DB_PATH) -> list[dict]:
+def get_events_for_workstream(ws_id: str, limit: int = 200, db_path: Path | None = None) -> list[dict]:
     sql = ("SELECT * FROM events WHERE workstream_id = ? AND deleted = 0 "
            "ORDER BY occurred_at DESC, id LIMIT ?")
     with _conn(db_path) as con:
@@ -319,7 +322,7 @@ def get_events_for_workstream(ws_id: str, limit: int = 200, db_path: Path = DB_P
     return [_row_to_event_dict(r) for r in rows]
 
 
-def workstream_week_counts(weeks: list[str], db_path: Path = DB_PATH) -> dict[str, dict[str, int]]:
+def workstream_week_counts(weeks: list[str], db_path: Path | None = None) -> dict[str, dict[str, int]]:
     """{workstream_id: {week: count}} over the given weeks (assigned events only)."""
     if not weeks:
         return {}
@@ -337,7 +340,7 @@ def workstream_week_counts(weeks: list[str], db_path: Path = DB_PATH) -> dict[st
 
 # ── items (decisions, commitments, risks) ───────────────────────────────────
 
-def insert_item(item: dict, db_path: Path = DB_PATH) -> None:
+def insert_item(item: dict, db_path: Path | None = None) -> None:
     with _conn(db_path) as con:
         con.execute(
             """INSERT INTO items
@@ -354,7 +357,7 @@ def insert_item(item: dict, db_path: Path = DB_PATH) -> None:
 
 def update_item(item_id: str, *, status: str | None = None, last_week: str | None = None,
                 evidence: list[str] | None = None, due_date: str | None = None,
-                db_path: Path = DB_PATH) -> None:
+                db_path: Path | None = None) -> None:
     sets, params = ["updated_at = ?"], [_now()]
     if status is not None:
         sets.append("status = ?"); params.append(status)
@@ -370,7 +373,7 @@ def update_item(item_id: str, *, status: str | None = None, last_week: str | Non
 
 
 def list_items(kind: str | None = None, status: str | None = None,
-               db_path: Path = DB_PATH) -> list[dict]:
+               db_path: Path | None = None) -> list[dict]:
     clauses, params = [], []
     if kind:
         clauses.append("kind = ?"); params.append(kind)
@@ -391,7 +394,7 @@ def list_items(kind: str | None = None, status: str | None = None,
 
 
 def append_item_history(item_id: str, week: str, change: str, detail: str = "",
-                        evidence: list[str] | None = None, db_path: Path = DB_PATH) -> None:
+                        evidence: list[str] | None = None, db_path: Path | None = None) -> None:
     with _conn(db_path) as con:
         con.execute(
             """INSERT INTO item_history (item_id, week, change, detail, evidence, created_at)
@@ -400,7 +403,7 @@ def append_item_history(item_id: str, week: str, change: str, detail: str = "",
         )
 
 
-def get_item_history(item_id: str, db_path: Path = DB_PATH) -> list[dict]:
+def get_item_history(item_id: str, db_path: Path | None = None) -> list[dict]:
     with _conn(db_path) as con:
         rows = con.execute(
             "SELECT * FROM item_history WHERE item_id = ? ORDER BY seq", (item_id,)
@@ -410,7 +413,7 @@ def get_item_history(item_id: str, db_path: Path = DB_PATH) -> list[dict]:
 
 # ── briefings ────────────────────────────────────────────────────────────────
 
-def insert_briefing(briefing: Briefing, db_path: Path = DB_PATH) -> None:
+def insert_briefing(briefing: Briefing, db_path: Path | None = None) -> None:
     sql = """
         INSERT OR REPLACE INTO briefings (id, week_number, generated_at, delivered, content)
         VALUES (?, ?, ?, ?, ?)
@@ -425,7 +428,7 @@ def insert_briefing(briefing: Briefing, db_path: Path = DB_PATH) -> None:
         ))
 
 
-def mark_delivered(briefing_id: str, db_path: Path = DB_PATH) -> None:
+def mark_delivered(briefing_id: str, db_path: Path | None = None) -> None:
     with _conn(db_path) as con:
         con.execute(
             "UPDATE briefings SET delivered = 1 WHERE id = ?",
@@ -433,7 +436,7 @@ def mark_delivered(briefing_id: str, db_path: Path = DB_PATH) -> None:
         )
 
 
-def get_briefing_for_week(week: str, db_path: Path = DB_PATH) -> dict | None:
+def get_briefing_for_week(week: str, db_path: Path | None = None) -> dict | None:
     with _conn(db_path) as con:
         row = con.execute(
             "SELECT * FROM briefings WHERE week_number = ? ORDER BY generated_at DESC LIMIT 1",
@@ -442,7 +445,7 @@ def get_briefing_for_week(week: str, db_path: Path = DB_PATH) -> dict | None:
     return dict(row) if row else None
 
 
-def list_briefings(db_path: Path = DB_PATH) -> list[dict]:
+def list_briefings(db_path: Path | None = None) -> list[dict]:
     with _conn(db_path) as con:
         rows = con.execute(
             "SELECT id, week_number, generated_at, delivered FROM briefings ORDER BY week_number DESC"
@@ -452,7 +455,7 @@ def list_briefings(db_path: Path = DB_PATH) -> list[dict]:
 
 # ── retention ────────────────────────────────────────────────────────────────
 
-def export_all(db_path: Path = DB_PATH) -> dict:
+def export_all(db_path: Path | None = None) -> dict:
     """Full local export of user data as plain dicts."""
     out: dict[str, list[dict]] = {}
     with _conn(db_path) as con:
@@ -463,7 +466,7 @@ def export_all(db_path: Path = DB_PATH) -> dict:
     return out
 
 
-def purge_all(db_path: Path = DB_PATH) -> None:
+def purge_all(db_path: Path | None = None) -> None:
     """Complete local deletion of derived and source data."""
     with _conn(db_path) as con:
         for table in ("events", "events_fts", "briefings", "workstreams",
