@@ -76,10 +76,14 @@ def _ingest_source(name: str, cfg: Config, fetcher=None, now: datetime | None = 
         logger.info("[%s] %d new, %d updated (window since %s).", name, new, updated, since.date())
         return {"new": new, "updated": updated, "status": "ok"}
     except Exception as exc:
-        set_sync_state(name, status="error", error=str(exc)[:500])
-        manifest.source_result(name, 0, "error", str(exc))
-        logger.error("[%s] ingestion failed: %s", name, exc)
-        return {"new": 0, "updated": 0, "status": "error", "error": str(exc)}
+        # Connector errors routinely quote request headers or URLs; every path
+        # that stores or prints one goes through redaction first.
+        from agent.secrets import redact
+        message = redact(str(exc))[:500]
+        set_sync_state(name, status="error", error=message)
+        manifest.source_result(name, 0, "error", message)
+        logger.error("[%s] ingestion failed: %s", name, message)
+        return {"new": 0, "updated": 0, "status": "error", "error": message}
 
 
 def run_analysis_and_briefing(cfg: Config, week: str, send: bool = False,

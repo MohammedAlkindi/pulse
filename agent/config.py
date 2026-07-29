@@ -36,10 +36,15 @@ class Config:
     # ── env var resolution ──────────────────────────────────────────────────
 
     def env(self, key: str) -> str:
-        """Return the env var value or raise clearly."""
-        value = os.getenv(key)
+        """Resolve a credential (env var, then OS keychain) or raise clearly."""
+        from agent.secrets import resolve
+
+        value = resolve(key)
         if not value:
-            raise EnvironmentError(f"Required environment variable '{key}' is not set.")
+            raise EnvironmentError(
+                f"Credential '{key}' is not set. Export it, or store it in your "
+                f"OS keychain under service 'pulse'."
+            )
         return value
 
     def analysis_api_key(self) -> str:
