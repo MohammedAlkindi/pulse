@@ -1,9 +1,21 @@
+import pytest
+
 from agent.config import Config
 from agent.health import check
 
 
 def base_cfg():
     return Config({"sources": {}})
+
+
+@pytest.fixture(autouse=True)
+def writable_dirs(tmp_path, monkeypatch):
+    # data/ and logs/ are gitignored, so they don't exist on a fresh checkout
+    # (e.g. CI) — point the checks at temp dirs to keep the tests hermetic.
+    data, logs = tmp_path / "data", tmp_path / "logs"
+    data.mkdir(); logs.mkdir()
+    monkeypatch.setattr("agent.health.DATA_DIR", data)
+    monkeypatch.setattr("agent.health.LOGS_DIR", logs)
 
 
 class TestHealthCheck:
