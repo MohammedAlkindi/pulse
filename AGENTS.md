@@ -6,10 +6,8 @@ Read this and `CLAUDE.md` before working here. Full standards: `~/.claude/CLAUDE
 Implement features, fix bugs, and refactor within this repo.
 
 ## Branch & commits
-- Work directly on `main` only when the tree is clean; otherwise branch as
-  `claude/<type>-<kebab>`.
-- Conventional-commit messages; one logical change per commit.
-- **No AI co-author trailers.** Mohammed is the sole author of this repository.
+Global — see `~/.claude/CLAUDE.md` for commit format, sizing, attribution and the
+branch/push table. This repo adds no exceptions.
 
 ## Requires explicit confirmation
 Destructive git ops (force-push, history rewrite), deploying anything to a

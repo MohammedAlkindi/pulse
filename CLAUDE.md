@@ -49,5 +49,5 @@ python agent/run_pulse.py --ui                                # interface only
 - **Console output stays ASCII** (Windows cp1252 crashes on arrows/middots).
 
 ## Conventions
-Conventional commits, one logical change each. No AI co-author trailers —
-Mohammed is the sole author on this repository.
+Commit format, attribution and branch policy are global — see `~/.claude/CLAUDE.md`.
+Nothing about them is specific to this repo.
