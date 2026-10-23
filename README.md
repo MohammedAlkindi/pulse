@@ -12,7 +12,7 @@ server, no cloud database, no account.
 
 ```bash
 git clone https://github.com/MohammedAlkindi/Pulse && cd Pulse
-python -m venv .venv && .venv/Scripts/activate      # macOS/Linux: source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 python agent/run_pulse.py --demo --ui               # synthetic data, no credentials
 ```
@@ -119,7 +119,7 @@ with declared ground truth and measures deduplication, workstream linking,
 commitment and deadline extraction, citation validity (every `[n]` resolves
 to a listed source), momentum correctness, injection containment,
 insufficient-evidence honesty, and cross-source failure isolation. CI runs
-it on every push.
+the full suite on pushes to `main` and on pull requests.
 
 ## Limitations
 
