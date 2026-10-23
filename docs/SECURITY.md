@@ -28,7 +28,7 @@ model adds interpretation, not facts.
 
 ## What is never stored
 
-- Email bodies (subject plus a 120-character snippet only)
+- Email bodies (only the subject and Gmail's own short snippet are kept)
 - Notion page bodies (title, status, last-edited time only)
 - Any credential, in any table, log, or briefing
 
