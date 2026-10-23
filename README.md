@@ -134,4 +134,7 @@ the full suite on pushes to `main` and on pull requests.
 - **The database is unencrypted SQLite.** Anyone with access to the machine
   can read it — use full-disk encryption.
 - **Single-user, single-machine.** No sync, no sharing, no multi-account.
+- **Gmail OAuth requests the send scope** as well as read-only access, because
+  `--send` emails the review from your account. It is requested even if you
+  never use `--send`.
 - **Manifest growth is unbounded** and rotation is not implemented.
