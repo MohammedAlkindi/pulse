@@ -74,7 +74,8 @@ cp config/pulse_config.example.yaml config/pulse_config.yaml
 ```
 
 Set credentials as environment variables or in your OS keychain (service
-`pulse`) — never in the config file:
+`pulse`, which needs `pip install keyring`). Never put them in the config
+file:
 
 | Variable | For | Where |
 |---|---|---|
