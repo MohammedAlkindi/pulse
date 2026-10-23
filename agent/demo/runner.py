@@ -8,10 +8,10 @@ the operating review stands up without an LLM in the loop.
 """
 
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
-from agent import paths
+from agent import clock, paths
 from agent.config import Config
 from agent.store import db
 
@@ -53,13 +53,22 @@ def seed(reset: bool = True) -> dict:
     return {"submitted": len(events), "new": new, "updated": updated}
 
 
+def use_demo_clock() -> datetime:
+    """Pin "now" to the corpus anchor. The corpus is fixed to 2026-W31, so
+    analyzing the current week would find no events and render an empty review."""
+    from agent.demo.corpus import ANCHOR
+
+    clock.pin(ANCHOR)
+    return ANCHOR
+
+
 def run(reset: bool = True, week: str | None = None) -> dict:
     """Seed and run the full pipeline. Returns a summary dict."""
-    from agent.analysis.momentum import iso_week_of_now
     from agent.scheduler import run_analysis_and_briefing
+    from agent.store.models import iso_week
 
     stats = seed(reset=reset)
-    target_week = week or iso_week_of_now()
+    target_week = week or iso_week(use_demo_clock())
     content = run_analysis_and_briefing(DEMO_CONFIG, target_week, send=False)
 
     return {

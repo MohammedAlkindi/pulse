@@ -13,13 +13,14 @@ A "track" is the unit of attention:
 """
 
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
+from agent import clock
 from agent.store.models import iso_week
 
 
 def iso_week_of_now() -> str:
-    return iso_week(datetime.now(timezone.utc))
+    return iso_week(clock.now())
 
 WINDOW_WEEKS = 5          # current week + 4 weeks of history
 MIN_TOTAL_EVENTS = 2      # tracks with fewer events across the window are noise

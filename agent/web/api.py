@@ -5,9 +5,7 @@ handler and the tests. Nothing here returns a secret: connector status is
 reported through `secrets.describe`, which never includes the value.
 """
 
-from datetime import date, datetime, timezone
-
-from agent import secrets
+from agent import clock, secrets
 from agent.analysis.items_sync import stale_open_items
 from agent.analysis.momentum import compute_momentum, iso_week_of_now, trailing_weeks
 from agent.analysis.sanitize import sanitize_for_markdown
@@ -90,7 +88,7 @@ def briefing(week: str | None = None, db_path=None) -> dict:
 
 def workstreams(db_path=None) -> dict:
     kwargs = {"db_path": db_path} if db_path else {}
-    weeks = trailing_weeks(datetime.now(timezone.utc), 5)
+    weeks = trailing_weeks(clock.now(), 5)
     counts = db.workstream_week_counts(weeks, **kwargs)
     tracks = compute_momentum(db.get_events_for_weeks(weeks, **kwargs), weeks)["tracks"]
     out = []
@@ -124,7 +122,7 @@ def workstream_detail(ws_id: str, db_path=None) -> dict:
 def items(kind: str | None = None, status_filter: str | None = "open", db_path=None) -> dict:
     kwargs = {"db_path": db_path} if db_path else {}
     rows = db.list_items(kind=kind, status=status_filter, **kwargs)
-    deadlines = {d["id"]: d for d in approaching_deadlines(rows, date.today())}
+    deadlines = {d["id"]: d for d in approaching_deadlines(rows, clock.today())}
     out = []
     for row in rows:
         view = _item_view(row)

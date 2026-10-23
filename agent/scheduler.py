@@ -93,7 +93,7 @@ def run_analysis_and_briefing(cfg: Config, week: str, send: bool = False,
     item extraction and persistence, cited analysis, and the evidence-backed
     briefing. Returns the briefing content string.
     """
-    from datetime import date
+    from agent import clock
     from agent.analysis import analyzer
     from agent.analysis.extract import extract_candidates
     from agent.analysis.items_sync import stale_open_items, sync_items
@@ -107,7 +107,7 @@ def run_analysis_and_briefing(cfg: Config, week: str, send: bool = False,
     from agent.store.models import Briefing as BriefingModel
     import uuid
 
-    weeks = trailing_weeks(datetime.now(timezone.utc))
+    weeks = trailing_weeks(clock.now())
 
     # 1 · connect events into workstreams (deterministic; ambiguity queues)
     resolve_events(get_unassigned_events(weeks), cfg=cfg)
@@ -138,7 +138,7 @@ def run_analysis_and_briefing(cfg: Config, week: str, send: bool = False,
 
     # 5 · assemble ledger views for the briefing
     open_items = list_items(status="open")
-    deadlines = approaching_deadlines(open_items, date.today())
+    deadlines = approaching_deadlines(open_items, clock.today())
     stale = stale_open_items(week, min_weeks_open=2)
     changes = material_changes(week)
 

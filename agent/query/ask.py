@@ -11,8 +11,9 @@ Every answer carries the evidence it used, or says it has none.
 
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
+from agent import clock
 from agent.analysis.citations import validate_citations
 from agent.analysis.momentum import compute_momentum, trailing_weeks
 from agent.analysis.sanitize import sanitize_for_markdown, sanitize_for_prompt
@@ -29,7 +30,7 @@ _DAYS_QUERY = re.compile(r"(?P<n>\d+)\s*(?:\+)?\s*days?")
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return clock.now()
 
 
 def _cite(events: list[dict]) -> list[dict]:

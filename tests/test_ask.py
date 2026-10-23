@@ -1,6 +1,6 @@
 import pytest
 
-from agent import paths
+from agent import clock, paths
 from agent.analysis.extract import extract_candidates
 from agent.analysis.items_sync import sync_items
 from agent.analysis.momentum import trailing_weeks
@@ -18,6 +18,8 @@ WEEK = iso_week(ANCHOR)
 def corpus_db(tmp_path, monkeypatch):
     path = tmp_path / "ask.db"
     monkeypatch.setattr(paths, "DB_PATH", path)
+    # The corpus is fixed to 2026-W31; ask must look at those weeks, not today's.
+    monkeypatch.setattr(clock, "_pinned", ANCHOR)
     db.init_db(path)
     db.upsert_events(build_corpus(), path)
     weeks = trailing_weeks(ANCHOR, 6)
