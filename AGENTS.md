@@ -1,13 +1,13 @@
 # AGENTS.md — Pulse
 
-Read this and `CLAUDE.md` before working here. Full standards: `~/.claude/CLAUDE.md` and `~/Github/CLAUDE.md`.
+Read this and `CLAUDE.md` before working here.
 
 ## Scope
 Implement features, fix bugs, and refactor within this repo.
 
 ## Branch & commits
-Global — see `~/.claude/CLAUDE.md` for commit format, sizing, attribution and the
-branch/push table. This repo adds no exceptions.
+Conventional Commits, one logical change per commit, Mohammed as sole author with
+no AI trailers. Branch names are `<type>/<kebab-description>`.
 
 ## Requires explicit confirmation
 Destructive git ops (force-push, history rewrite), deploying anything to a

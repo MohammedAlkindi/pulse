@@ -1,7 +1,5 @@
 # Pulse — project context for Claude Code
 
-> Project-specific context layered on top of the global standards in `~/.claude/CLAUDE.md`.
-
 ## What it does
 Turns scattered Gmail, GitHub, and Notion activity into an evidence-backed
 weekly operating review. Events land in a local SQLite ledger, resolve into
@@ -49,5 +47,5 @@ python agent/run_pulse.py --ui                                # interface only
 - **Console output stays ASCII** (Windows cp1252 crashes on arrows/middots).
 
 ## Conventions
-Commit format, attribution and branch policy are global — see `~/.claude/CLAUDE.md`.
-Nothing about them is specific to this repo.
+Conventional Commits, one logical change per commit, and Mohammed as sole author
+with no AI co-author trailers. Branch names are `<type>/<kebab-description>`.
