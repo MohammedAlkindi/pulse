@@ -1,5 +1,8 @@
 # Pulse
 
+Public walkthrough: [read a synthetic weekly briefing](https://pulse-overview.vercel.app/sample.html).
+The website build (`python scripts/build_site.py`) copies only `site/` and the shared briefing renderer/styles. It never reads a local ledger, configuration or credentials. The local interface and public example use the same escaped Markdown renderer; the original Markdown remains available to download.
+
 [![CI](https://github.com/MohammedAlkindi/Pulse/actions/workflows/ci.yml/badge.svg)](https://github.com/MohammedAlkindi/Pulse/actions/workflows/ci.yml)
 
 **Pulse turns scattered work activity into an evidence-backed operating review.**

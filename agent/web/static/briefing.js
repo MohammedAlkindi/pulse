@@ -43,7 +43,7 @@
       if (line.startsWith("|") && /^\|?[\s:|-]+\|?$/.test(lines[i + 1]?.trim() || "")) {
         const headers = cells(line), rows = []; i += 2;
         while (i < lines.length && lines[i].trim().startsWith("|")) rows.push(`<tr>${cells(lines[i++]).map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`);
-        out.push(`<div class="brief-table"><table><thead><tr>${headers.map((c) => `<th scope="col">${inline(c)}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`); continue;
+        out.push(`<div class="brief-table" role="region" aria-label="Briefing table" tabindex="0"><table><thead><tr>${headers.map((c) => `<th scope="col">${inline(c)}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`); continue;
       }
       if (/^(?:- |\d+\. )/.test(line)) {
         const ordered = /^\d+\. /.test(line), pattern = ordered ? /^(\d+)\. (.*)$/ : /^- (.*)$/, items = [];
