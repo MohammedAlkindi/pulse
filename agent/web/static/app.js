@@ -72,7 +72,7 @@ const views = {
         ${other ? `<div style="margin-top:12px">${other}</div>` : ""}</div>`;
     }
     return `<h1>Briefing</h1><div class="sub">${esc(data.week)} · generated ${esc((data.generated_at || "").slice(0, 16))}</div>
-      <pre class="brief">${esc(data.content)}</pre>`;
+      <article class="brief">${renderBriefing(data.content)}</article>`;
   },
 
   async items() {
@@ -91,11 +91,11 @@ const views = {
     const list = data.workstreams || [];
     if (!list.length) return `<h1>Workstreams</h1><div class="panel"><p class="empty">No workstreams yet — run a sync or the demo.</p></div>`;
     return `<h1>Workstreams</h1><div class="sub">Grouped across Gmail, GitHub, and Notion · window ${esc(data.weeks[0])}–${esc(data.weeks.at(-1))}</div>
-      <div class="grid">${list.map((w) => `<div class="card" data-ws="${esc(w.id)}">
+      <div class="grid">${list.map((w) => `<button type="button" class="card" data-ws="${esc(w.id)}">
         <div class="n">${esc(w.name)}</div>
         <div class="meta">${esc(w.kind)} · ${w.events_this_week} this week · ${w.events_window} in window</div>
         ${w.trend ? `<div style="margin-top:6px"><span class="tag ${w.trend === "stalled" ? "bad" : w.trend === "rising" ? "ok" : ""}">${esc(w.trend)}</span></div>` : ""}
-      </div>`).join("")}</div>`;
+      </button>`).join("")}</div>`;
   },
 
   async workstream(id) {
@@ -225,7 +225,7 @@ document.addEventListener("click", async (e) => {
   const week = e.target.closest("[data-week]");
   if (week) {
     const data = await get("/api/briefing?week=" + encodeURIComponent(week.dataset.week));
-    main.innerHTML = `<h1>Briefing</h1><div class="sub">${esc(data.week)}</div><pre class="brief">${esc(data.content || "")}</pre>`;
+    main.innerHTML = `<h1>Briefing</h1><div class="sub">${esc(data.week)}</div><article class="brief">${renderBriefing(data.content || "")}</article>`;
     return;
   }
 
