@@ -749,3 +749,404 @@ code {
   background: var(--accent, #27646c);
   border-radius: 3px;
 }
+/* Compact, content-first workspace. Shared by the local app and public example. */
+:root {
+  --paper: #fff;
+  --ink: #252a26;
+  --muted: #68706a;
+  --faint: #747b75;
+  --rule: #e5e9e4;
+  --accent: #425e4b;
+  --accent-bg: #f3f6f2;
+  --bad-bg: #fcf1ef;
+  --warn-bg: #faf5ec;
+}
+h1 {
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+.meta,
+.eyebrow {
+  font-family: var(--sans);
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 11px;
+}
+.wrap {
+  display: block;
+  min-height: 100dvh;
+}
+.workspace-nav {
+  position: relative;
+  height: auto;
+  min-height: 66px;
+  flex-direction: row;
+  align-items: center;
+  gap: 35px;
+  padding: 0 30px;
+  border-right: 0;
+  border-bottom: 1px solid var(--rule);
+}
+.brand {
+  font-size: 20px;
+  padding: 0;
+  white-space: nowrap;
+}
+.brand:before {
+  height: 7px;
+  width: 7px;
+  margin-right: 8px;
+}
+.brand span {
+  display: none;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.workspace-nav button {
+  width: auto;
+  min-height: 36px;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.workspace-nav button.on {
+  background: var(--accent-bg);
+  font-weight: 500;
+}
+.local-link {
+  margin: 0 0 0 auto;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.nav-system {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.nav-system > summary {
+  cursor: pointer;
+  padding: 8px;
+}
+.nav-system[open] {
+  position: relative;
+}
+.nav-system[open] > button {
+  display: block;
+  min-width: 135px;
+  background: white;
+}
+.workspace-main {
+  max-width: 1150px;
+  margin: auto;
+  padding: 34px 30px 54px;
+}
+.page-title {
+  margin-bottom: 16px;
+}
+.sub {
+  font-size: 13px;
+  margin: 9px 0 20px;
+}
+.note {
+  background: var(--accent-bg);
+  border: 0;
+  border-radius: 4px;
+  padding: 10px 13px;
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 16px 0;
+}
+.note.unsafe {
+  border-left: 2px solid var(--bad);
+  background: var(--bad-bg);
+}
+.review-summary {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 11px;
+  margin: 20px 0;
+}
+.review-summary strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.review-summary > span:last-child {
+  margin-left: auto;
+}
+.review-toolbar {
+  gap: 12px;
+  margin: 0 0 10px;
+}
+.review-toolbar label {
+  font-size: 11px;
+}
+.review-toolbar select,
+.review-toolbar input {
+  min-height: 36px;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+#review-count {
+  font-size: 11px;
+  margin: 9px 0 12px;
+}
+#review-list {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.queue-item {
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 17px 19px;
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 25px;
+  row-gap: 5px;
+}
+.queue-item:last-child {
+  border-bottom: 0;
+}
+.queue-item > .item-h {
+  grid-column: 1;
+  grid-row: 1;
+  gap: 10px;
+}
+.queue-item h2 {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.queue-item > .meta {
+  grid-column: 1;
+  grid-row: 3;
+  font-size: 10px;
+  margin: 0;
+}
+.queue-item > .act {
+  grid-column: 2;
+  grid-row: 1/4;
+  align-self: center;
+  margin: 0;
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  font-size: 11px;
+  min-height: 35px;
+}
+.queue-item > .act:hover {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.review-note {
+  grid-column: 1/-1;
+  grid-row: 4;
+  margin: 7px 0 0;
+}
+.tag {
+  font-family: var(--sans);
+  font-size: 10px;
+  border-radius: 3px;
+  letter-spacing: 0;
+}
+.act {
+  font-size: 12px;
+  border-radius: 5px;
+  min-height: 35px;
+  padding: 8px 12px;
+  font-weight: 500;
+}
+.panel {
+  border-radius: 6px;
+  padding: 20px;
+}
+.brief {
+  box-shadow: none;
+}
+.brief h1,
+.brief h2,
+.brief h3 {
+  font-family: var(--sans);
+}
+.brief-outline a {
+  font-family: var(--sans);
+  font-size: 11px;
+}
+dialog#drawer {
+  width: min(560px, 100vw);
+  padding: 32px;
+  box-shadow: -10px 0 30px #20282009;
+}
+dialog#drawer h2 {
+  font-size: 23px;
+}
+dialog#drawer .eyebrow {
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+.review-claim {
+  font-size: 16px;
+  line-height: 1.6;
+}
+.ev {
+  padding: 16px 0;
+}
+.ev h3 {
+  font-size: 14px;
+}
+.ev blockquote {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.review-editor {
+  margin-top: 22px;
+}
+.review-editor label {
+  font-size: 12px;
+}
+.review-editor .meta {
+  font-size: 11px;
+}
+@media (max-width: 900px) {
+  .workspace-nav {
+    gap: 20px;
+    padding: 14px 22px;
+    flex-wrap: wrap;
+  }
+  .nav-links {
+    gap: 3px;
+  }
+  .workspace-main {
+    padding: 28px 22px;
+  }
+  .local-link {
+    font-size: 10px;
+  }
+  .workspace-nav button {
+    font-size: 11px;
+    padding: 7px 9px;
+  }
+}
+@media (max-width: 620px) {
+  .workspace-nav {
+    gap: 12px;
+    padding: 16px;
+    align-items: center;
+  }
+  .brand {
+    font-size: 19px;
+  }
+  .nav-links {
+    order: 3;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .local-link {
+    margin-left: auto;
+  }
+  .nav-system {
+    width: auto;
+    border: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .workspace-main {
+    padding: 26px 16px 42px;
+  }
+  h1 {
+    font-size: 26px;
+  }
+  .review-summary {
+    gap: 12px;
+    font-size: 10px;
+    margin: 18px 0;
+  }
+  .review-summary > span:last-child {
+    display: none;
+  }
+  .review-toolbar {
+    grid-template-columns: 1fr 1.3fr;
+    gap: 10px;
+  }
+  .review-toolbar .act {
+    grid-column: 1/-1;
+  }
+  .queue-item {
+    padding: 16px;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .queue-item > .item-h {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .queue-item h2 {
+    font-size: 14px;
+  }
+  .queue-item > .act {
+    grid-column: 1;
+    grid-row: 4;
+    justify-self: start;
+    min-height: 36px;
+    margin-top: 5px;
+  }
+  .review-note {
+    grid-row: 5;
+  }
+  .note {
+    font-size: 10px;
+    padding: 10px 12px;
+  }
+  .sub {
+    font-size: 12px;
+  }
+  .brief {
+    padding: 18px;
+  }
+  dialog#drawer {
+    padding: 27px 20px;
+  }
+  .review-claim {
+    font-size: 15px;
+  }
+}
+.system-menu {
+  display: none;
+}
+.nav-system[open] > .system-menu {
+  display: grid;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  min-width: 160px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 5px;
+  z-index: 5;
+  box-shadow: 0 4px 16px #2028200a;
+}
+.system-menu button {
+  width: 100%;
+  text-align: left;
+}

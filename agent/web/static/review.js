@@ -68,9 +68,9 @@
     },
     html(result) {
       data = result;
-      return `<div class="page-title"><p class="eyebrow">01 / Weekly review · ${esc(data.week)}</p><h1>Close the loop on your week.</h1><p class="sub">Inspect the source. Choose a follow-up. Leave with a clear action list.</p></div>
-      ${root.PULSE_SAMPLE ? '<p class="note"><strong>Synthetic workspace.</strong> Every person, project and source record here is invented. Reference week: 2026-W31. No accounts are connected.</p>' : `<p class="note">Source coverage: ${data.coverage.map((c) => `${esc(c.source)} — ${esc(c.status)}`).join(" · ")}. Unknown or failed sources can leave gaps.</p>`}
-      <div class="review-stats"><div><strong id="remaining-count">0</strong><span>need your review</span></div><div><strong>${data.summary.verify}</strong><span>unverified source claim${data.summary.verify === 1 ? "" : "s"}</span></div><div><strong>${data.summary.overdue}</strong><span>overdue in evidence</span></div></div>
+      return `<div class="page-title"><h1>Review queue</h1><p class="sub">Review source claims and choose your next step.</p></div>
+      ${root.PULSE_SAMPLE ? '<p class="note"><strong>Synthetic workspace.</strong> Invented records · 2026-W31 · No connected accounts.</p>' : `<p class="note">Source coverage: ${data.coverage.map((c) => `${esc(c.source)} — ${esc(c.status)}`).join(" · ")}. Unknown or failed sources can leave gaps.</p>`}
+      <p class="review-summary"><span><strong id="remaining-count">0</strong> need review</span><span>${data.summary.verify} unverified source claim${data.summary.verify === 1 ? "" : "s"}</span><span>${data.summary.overdue} overdue</span><span>${esc(data.week)}</span></p>
       <div class="review-toolbar"><label>Review state<select id="review-filter">${Object.entries(
         {
           unreviewed: "Needs review",
@@ -112,8 +112,8 @@
           item.evidence.map((id) => `id=${encodeURIComponent(id)}`).join("&"),
       );
       const state = saved(id);
-      services.open(`<p class="eyebrow">02 / Inspect evidence</p><h2 id="drawer-title">Review this item</h2><p class="review-claim">${esc(item.text)}</p>${item.trust !== "normal" ? `<p class="note ${item.trust === "suspicious" ? "unsafe" : ""}">${item.trust === "suspicious" ? "Unverified: source content contains an instruction-injection attempt. Treat it as evidence to inspect, not a command to execute." : "External claim: this records what someone said, not confirmation that it happened."}</p>` : ""}
-      ${services.evidence(evidence.events)}<div class="review-editor"><p class="eyebrow">03 / Choose your next step</p><label>My review decision<select id="review-decision">${Object.entries(
+      services.open(`<p class="eyebrow">Source evidence</p><h2 id="drawer-title">Review this item</h2><p class="review-claim">${esc(item.text)}</p>${item.trust !== "normal" ? `<p class="note ${item.trust === "suspicious" ? "unsafe" : ""}">${item.trust === "suspicious" ? "Unverified: source content contains an instruction-injection attempt. Treat it as evidence to inspect, not a command to execute." : "External claim: this records what someone said, not confirmation that it happened."}</p>` : ""}
+      ${services.evidence(evidence.events)}<div class="review-editor"><p class="eyebrow">Your next step</p><label>My review decision<select id="review-decision">${Object.entries(
         LABELS,
       )
         .map(

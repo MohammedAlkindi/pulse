@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#f4f6f3" />
+    <meta name="theme-color" content="#ffffff" />
     <title>Pulse | Evidence-backed weekly review</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="workspace.css" />
@@ -29,12 +29,14 @@
           ><button data-v="items">Commitments</button
           ><button data-v="workstreams">Workstreams</button
           ><button data-v="ask" data-local>Ask Pulse</button>
-          <div class="nav-system" data-local>
-            <p class="eyebrow">Local system</p>
-            <button data-v="connectors">Connectors</button
-            ><button data-v="sync">Sync history</button
-            ><button data-v="settings">Settings &amp; data</button>
-          </div>
+          <details class="nav-system" data-local>
+            <summary>System</summary>
+            <div class="system-menu">
+              <button data-v="connectors">Connectors</button
+              ><button data-v="sync">Sync history</button
+              ><button data-v="settings">Settings &amp; data</button>
+            </div>
+          </details>
         </div>
         <a
           class="local-link"

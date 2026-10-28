@@ -340,7 +340,10 @@ async function render(view, arg) {
 
 document.addEventListener("click", async (e) => {
   const nav = e.target.closest("[data-v]");
-  if (nav) return render(nav.dataset.v);
+  if (nav) {
+    nav.closest("details")?.removeAttribute("open");
+    return render(nav.dataset.v);
+  }
 
   const ws = e.target.closest("[data-ws]");
   if (ws) return render("workstream", ws.dataset.ws);

@@ -10,7 +10,7 @@ test("landing leads into an explicitly synthetic workspace", async ({
     .getByRole("link", { name: "Open the sample workspace" })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Close the loop on your week." }),
+    page.getByRole("heading", { name: "Review queue", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText("Synthetic workspace.", { exact: true }),
