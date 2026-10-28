@@ -8,15 +8,15 @@ OUTPUT = ROOT / "build/site"
 
 def build():
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    for source in (ROOT / "site").iterdir():
-        if source.is_file():
-            shutil.copy2(source, OUTPUT / source.name)
+    for name in ("index.html", "landing.css", "sample.html", "sample.js", "sample.md", "sample-data.json"):
+        shutil.copy2(ROOT / "site" / name, OUTPUT / name)
     static = ROOT / "agent/web/static"
-    shutil.copy2(static / "briefing.js", OUTPUT / "briefing.js")
-    shutil.copy2(static / "favicon.svg", OUTPUT / "favicon.svg")
-    html = (static / "index.html").read_text(encoding="utf-8")
-    css = html.split("<style>", 1)[1].split("</style>", 1)[0]
-    (OUTPUT / "sample.css").write_text(css, encoding="utf-8")
+    for name in ("briefing.js", "review.js", "app.js", "workspace.css", "favicon.svg"):
+        shutil.copy2(static / name, OUTPUT / name)
+    fonts = OUTPUT / "fonts"
+    fonts.mkdir(exist_ok=True)
+    for name in ("dm-sans-latin.woff2", "dm-mono-400-latin.woff2", "fraunces-600-latin.woff2", "OFL.txt"):
+        shutil.copy2(static / "fonts" / name, fonts / name)
 
 
 if __name__ == "__main__":

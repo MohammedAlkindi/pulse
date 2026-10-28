@@ -19,6 +19,7 @@ SOURCES = ("gmail", "github", "notion")
 def _event_view(e: dict) -> dict:
     return {
         "id": e["id"],
+        "excerpt": sanitize_for_markdown(str((e.get("metadata") or {}).get("snippet") or (e.get("metadata") or {}).get("description") or ""), 1200),
         "source": e.get("source", ""),
         "type": e.get("event_type", ""),
         "title": sanitize_for_markdown(e.get("title") or "", 200),
@@ -83,7 +84,8 @@ def briefing(week: str | None = None, db_path=None) -> dict:
     if not row:
         available = db.list_briefings(**kwargs)
         return {"week": target, "content": None, "available": [b["week_number"] for b in available]}
-    return {"week": target, "content": row["content"], "generated_at": row["generated_at"]}
+    return {"week": target, "content": row["content"], "generated_at": row["generated_at"],
+            "available": [b["week_number"] for b in db.list_briefings(**kwargs)]}
 
 
 def workstreams(db_path=None) -> dict:
@@ -101,6 +103,7 @@ def workstreams(db_path=None) -> dict:
             "id": ws["id"], "name": ws["name"], "kind": ws["kind"],
             "events_this_week": week_counts.get(weeks[-1], 0),
             "events_window": sum(week_counts.values()),
+            "counts": [week_counts.get(w, 0) for w in weeks],
             "trend": trend,
         })
     out.sort(key=lambda w: (-w["events_window"], w["name"]))
@@ -163,3 +166,32 @@ def purge(db_path=None) -> dict:
 def export(db_path=None) -> dict:
     kwargs = {"db_path": db_path} if db_path else {}
     return db.export_all(**kwargs)
+
+
+
+def review(db_path=None) -> dict:
+    """A cited attention queue; review decisions remain separate from source facts."""
+    kwargs = {"db_path": db_path} if db_path else {}
+    rows = items(db_path=db_path)["items"]
+    def priority(item):
+        if item["trust"] == "suspicious":
+            return (0, "Verify source")
+        if item.get("deadline_state") == "overdue":
+            return (1, "Overdue")
+        if item["kind"] == "blocker":
+            return (2, "Blocked")
+        if item.get("deadline_state"):
+            return (3, "Due soon")
+        return (4, "Open")
+    for item in rows:
+        rank, label = priority(item)
+        item["priority_rank"], item["priority"] = rank, label
+    rows.sort(key=lambda item: (item["priority_rank"], item.get("due_date") or "9999", item["id"]))
+    states = {state["source"]: state for state in db.all_sync_states(**kwargs)}
+    coverage = [{"source": source, "status": states.get(source, {}).get("last_status", "unknown"),
+                 "last_success_at": states.get(source, {}).get("last_success_at", "")}
+                for source in SOURCES]
+    return {"week": iso_week_of_now(), "items": rows, "coverage": coverage,
+            "summary": {"open": len(rows), "verify": sum(i["trust"] == "suspicious" for i in rows),
+                        "overdue": sum(i.get("deadline_state") == "overdue" for i in rows)},
+            "notice": "Review labels are your triage decisions, not proof that a commitment is complete."}

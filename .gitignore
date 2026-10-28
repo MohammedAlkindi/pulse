@@ -28,3 +28,9 @@ Thumbs.db
 *.env
 
 data/demo/
+
+# Browser tooling
+node_modules/
+test-results/
+playwright-report/
+uiux-*.log

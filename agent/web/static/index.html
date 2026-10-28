@@ -1,113 +1,59 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Pulse</title>
-<link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
-<style>
-:root {
-  --paper:#fbfaf8; --ink:#171614; --muted:#6a6862; --faint:#96938c;
-  --rule:#e3e0d9; --panel:#ffffff; --accent:#1f4d8f; --accent-bg:#eef3fa;
-  --warn:#b45309; --warn-bg:#fdf5e6; --bad:#a3241f; --bad-bg:#fbf0ef;
-  --good:#15683c; --good-bg:#eff7f2;
-  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:14px;line-height:1.55}
-.wrap{display:grid;grid-template-columns:190px 1fr;min-height:100vh}
-
-nav{border-right:1px solid var(--rule);padding:20px 0;background:var(--panel)}
-.brand{padding:0 18px 18px;font-weight:640;letter-spacing:-.01em;font-size:15px}
-.brand small{display:block;font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase;font-weight:400;margin-top:3px}
-nav button{display:block;width:100%;text-align:left;padding:7px 18px;border:0;background:none;
-  font:inherit;color:var(--muted);cursor:pointer;border-left:2px solid transparent}
-nav button:hover{color:var(--ink);background:var(--paper)}
-nav button.on{color:var(--accent);border-left-color:var(--accent);background:var(--accent-bg);font-weight:560}
-nav .grp{padding:16px 18px 5px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--faint)}
-
-main{padding:26px 30px;max-width:1000px}
-h1{font-size:19px;font-weight:620;letter-spacing:-.015em;margin-bottom:3px}
-.sub{color:var(--muted);font-size:12.5px;margin-bottom:20px}
-.panel{background:var(--panel);border:1px solid var(--rule);border-radius:9px;padding:16px 18px;margin-bottom:14px}
-.panel h2{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--faint);font-weight:500;margin-bottom:12px}
-.row{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--rule)}
-.row:last-child{border-bottom:0}
-.k{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
-.tag{display:inline-block;font-family:var(--mono);font-size:10px;padding:1.5px 6px;border-radius:4px;
-  background:var(--rule);color:var(--muted);white-space:nowrap}
-.tag.ok{background:var(--good-bg);color:var(--good)} .tag.bad{background:var(--bad-bg);color:var(--bad)}
-.tag.warn{background:var(--warn-bg);color:var(--warn)} .tag.acc{background:var(--accent-bg);color:var(--accent)}
-button.act{font:inherit;font-size:12px;padding:5px 11px;border:1px solid var(--rule);border-radius:6px;
-  background:var(--panel);color:var(--ink);cursor:pointer}
-button.act:hover{border-color:var(--accent);color:var(--accent)}
-button.danger:hover{border-color:var(--bad);color:var(--bad)}
-input[type=text]{font:inherit;padding:8px 11px;border:1px solid var(--rule);border-radius:7px;
-  background:var(--panel);color:var(--ink);width:100%}
-input:focus{outline:2px solid var(--accent);outline-offset:1px}
-
-.item{padding:11px 0;border-bottom:1px solid var(--rule)}
-.item:last-child{border-bottom:0}
-.item-h{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:3px}
-.item-t{font-size:13.5px}
-.meta{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
-.cite{font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer;
-  border:1px solid var(--accent-bg);background:var(--accent-bg);border-radius:4px;padding:1px 5px}
-.cite:hover{background:var(--accent);color:#fff}
-.empty{color:var(--faint);font-style:italic;font-size:13px;padding:6px 0}
-.brief{font-size:14px;line-height:1.7;background:var(--panel);border:1px solid var(--rule);border-radius:9px;padding:24px;overflow-wrap:anywhere}
-.brief h2{font-size:23px;margin-bottom:12px}.brief h3{font-size:17px;margin:28px 0 10px;border-top:1px solid var(--rule);padding-top:20px}
-.brief p{margin:10px 0}.brief ul,.brief ol{padding-left:22px;margin:12px 0}.brief li{margin:8px 0;scroll-margin-top:24px}
-.brief a{color:var(--accent)}.brief code{font-family:var(--mono);font-size:.9em;background:var(--paper);padding:2px 4px;border-radius:3px}
-.brief-table{overflow-x:auto;margin:14px 0}.brief table{border-collapse:collapse;width:100%;min-width:480px;font-variant-numeric:tabular-nums}
-.brief th,.brief td{padding:8px 10px;border-bottom:1px solid var(--rule);text-align:left}.brief th{background:var(--paper)}
-.brief-citation{font-size:.85em;white-space:nowrap}button.card{font:inherit;text-align:left;color:inherit}
-@media(max-width:640px){.wrap{display:block}nav{border-right:0;border-bottom:1px solid var(--rule);padding:12px}nav button{display:inline-block;width:auto;padding:9px}.brand{padding:0 6px 8px}nav .grp{display:none}main{padding:20px 14px}.brief{padding:18px}aside{max-width:100vw}.grid{grid-template-columns:1fr}}
-@media(prefers-reduced-motion:reduce){aside{transition:none}}
-
-aside{position:fixed;top:0;right:0;width:390px;height:100vh;background:var(--panel);
-  border-left:1px solid var(--rule);padding:20px;overflow-y:auto;box-shadow:-6px 0 22px rgba(0,0,0,.06);
-  transform:translateX(100%);transition:transform .16s ease}
-aside.open{transform:none}
-aside h2{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:12px}
-aside .ev{border-bottom:1px solid var(--rule);padding:10px 0}
-aside a{color:var(--accent);font-size:11px;word-break:break-all}
-.close{float:right;cursor:pointer;color:var(--faint);border:0;background:none;font-size:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
-.card{border:1px solid var(--rule);border-radius:8px;padding:11px 13px;cursor:pointer;background:var(--panel)}
-.card:hover{border-color:var(--accent)}
-.card .n{font-weight:560;margin-bottom:3px;font-size:13px}
-.note{font-size:12px;color:var(--muted);background:var(--accent-bg);border:1px solid #dbe6f4;
-  border-radius:8px;padding:11px 13px;margin-bottom:14px}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <nav>
-    <div class="brand">Pulse<small>local · evidence-backed</small></div>
-    <div class="grp">Review</div>
-    <button data-v="briefing" class="on">Briefing</button>
-    <button data-v="items">Commitments</button>
-    <button data-v="workstreams">Workstreams</button>
-    <button data-v="ask">Ask Pulse</button>
-    <div class="grp">System</div>
-    <button data-v="connectors">Connectors</button>
-    <button data-v="sync">Sync history</button>
-    <button data-v="settings">Settings &amp; data</button>
-  </nav>
-  <main id="main">Loading…</main>
-</div>
-
-<aside id="drawer">
-  <button class="close" id="drawerClose">×</button>
-  <h2>Evidence</h2>
-  <div id="drawerBody"></div>
-</aside>
-
-<script src="/static/briefing.js"></script>
-<script src="/static/app.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f4f6f3" />
+    <title>Pulse | Evidence-backed weekly review</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/static/workspace.css" />
+    <link
+      rel="preload"
+      href="/static/fonts/dm-sans-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to review</a>
+    <div class="wrap">
+      <nav class="workspace-nav" aria-label="Pulse workspace">
+        <a class="brand" href="/">Pulse<span>Weekly review</span></a>
+        <div class="nav-links">
+          <button data-v="review" class="on">Review queue</button
+          ><button data-v="briefing">Weekly briefing</button
+          ><button data-v="items">Commitments</button
+          ><button data-v="workstreams">Workstreams</button
+          ><button data-v="ask" data-local>Ask Pulse</button>
+          <div class="nav-system" data-local>
+            <p class="eyebrow">Local system</p>
+            <button data-v="connectors">Connectors</button
+            ><button data-v="sync">Sync history</button
+            ><button data-v="settings">Settings &amp; data</button>
+          </div>
+        </div>
+        <a
+          class="local-link"
+          href="https://github.com/MohammedAlkindi/Pulse#setup-with-your-own-accounts"
+          >Run Pulse locally ↗</a
+        >
+      </nav>
+      <main class="workspace-main" id="main" tabindex="-1">
+        <p role="status">Loading review…</p>
+      </main>
+    </div>
+    <dialog id="drawer" aria-labelledby="drawer-title">
+      <button class="close" id="drawerClose" aria-label="Close evidence">
+        ×
+      </button>
+      <div id="drawerBody"></div>
+    </dialog>
+    <script src="/static/briefing.js"></script>
+    <script src="/static/review.js"></script>
+    <script src="/static/app.js"></script>
+  </body>
 </html>

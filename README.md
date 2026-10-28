@@ -1,7 +1,7 @@
 # Pulse
 
-Public walkthrough: [read a synthetic weekly briefing](https://pulse-overview.vercel.app/sample.html).
-The website build (`python scripts/build_site.py`) copies only `site/` and the shared briefing renderer/styles. It never reads a local ledger, configuration or credentials. The local interface and public example use the same escaped Markdown renderer; the original Markdown remains available to download.
+Public walkthrough: [try the synthetic review workspace](https://pulse-overview.vercel.app/sample.html).
+The website build (`python scripts/build_site.py`) copies an explicit list of public assets and a synthetic snapshot. It never reads a local ledger, configuration or credentials. The local interface and public example share the review workflow and escaped Markdown renderer. Regenerate the example with `python scripts/generate_public_sample.py`; this uses only the demo corpus in an isolated temporary ledger and never consults credentials.
 
 [![CI](https://github.com/MohammedAlkindi/Pulse/actions/workflows/ci.yml/badge.svg)](https://github.com/MohammedAlkindi/Pulse/actions/workflows/ci.yml)
 
@@ -114,7 +114,7 @@ boundaries are in [docs/SECURITY.md](docs/SECURITY.md).
 ## Tests
 
 ```bash
-pytest                    # 221 hermetic tests, no network or credentials
+pytest                    # hermetic tests, no network or credentials
 pytest tests/test_eval_corpus.py   # the evaluation suite
 ```
 
@@ -142,3 +142,26 @@ the full suite on pushes to `main` and on pull requests.
   `--send` emails the review from your account. It is requested even if you
   never use `--send`.
 - **Manifest growth is unbounded** and rotation is not implemented.
+
+## Weekly review workspace
+
+Start in the review queue: unverified claims first, then overdue commitments,
+blockers and approaching deadlines. Inspect the captured source excerpt before
+choosing Needs review, Follow up, Waiting or Reviewed. Add your own next action
+and download the follow-up/waiting action list as Markdown. Review labels do not
+resolve commitments or change source facts. Notes and decisions persist only in
+this browser for the item and review week; clearing browser storage removes them.
+They are never sent to the model or written into the ledger.
+
+The briefing has section navigation, available-week selection and a Markdown
+download. Commitments and workstreams retain their evidence inspection views.
+The public workspace contains invented records at the fixed 2026-W31 reference
+week; account setup, connector checks and Ask Pulse require the localhost app.
+
+Browser verification (public synthetic workspace, desktop and phone):
+
+```bash
+npm ci
+npx playwright install chromium
+npm run test:browser
+```

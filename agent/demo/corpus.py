@@ -152,5 +152,7 @@ GROUND_TRUTH = {
     "blocker_text_contains": "blocked on the missing DNS record",
     "stalled_track": ("github", "demo/proofx"),
     "injection_ids": ["gmail:demo:inject-1", "gmail:demo:inject-2"],
+    "review_queue": {"due_evidence": "gmail:demo:launch-2", "due_state": "due_soon",
+                     "verify_evidence": "gmail:demo:inject-2"},
     "duplicate_free_total": None,  # filled by tests: first ingest count
 }

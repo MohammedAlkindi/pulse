@@ -1,130 +1,166 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Pulse — your week, read back to you</title>
-<meta name="description" content="A local-first personal agent that turns your Gmail, GitHub, and Notion activity into one weekly briefing. Runs entirely on your machine — SQLite only, no cloud." />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<style>
-  :root{
-    --bg:#0e1315; --bg-2:#131a1d; --panel:#172023; --edge:#243033;
-    --text:#eaf0ef; --muted:#93a4a3; --faint:#5f7371;
-    --amber:#f2b24c; --amber-soft:#f7cd86; --mint:#5fd0a6;
-    --sans:'Inter',system-ui,sans-serif; --serif:'Newsreader',Georgia,serif; --mono:'IBM Plex Mono',monospace;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;
-    -webkit-font-smoothing:antialiased;overflow-x:hidden}
-  a{color:inherit}
-  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
-  .eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--amber)}
-  header{padding:104px 0 20px;text-align:center}
-  h1{font-family:var(--serif);font-weight:500;font-size:clamp(2.6rem,6vw,4.6rem);line-height:1.04;
-    letter-spacing:-.015em;margin:22px auto 20px;max-width:15ch}
-  h1 em{font-style:italic;color:var(--amber-soft)}
-  .lede{font-size:clamp(1.05rem,2vw,1.24rem);color:var(--muted);max-width:56ch;margin:0 auto}
-  .cta-row{display:flex;gap:13px;flex-wrap:wrap;margin-top:34px;justify-content:center}
-  .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-weight:500;
-    font-size:.9rem;padding:13px 20px;border-radius:8px;text-decoration:none;transition:.18s}
-  .btn-primary{background:var(--amber);color:#231603}
-  .btn-primary:hover{background:var(--amber-soft);transform:translateY(-2px)}
-  .btn-ghost{border:1px solid var(--edge);color:var(--text)}
-  .btn-ghost:hover{border-color:var(--amber)}
-  .wave{margin:56px 0 0}
-  .wave svg{width:100%;height:120px;display:block}
-  .wave .track{stroke:var(--edge);stroke-width:1.5;fill:none}
-  .wave .beat{stroke:var(--amber);stroke-width:2.5;fill:none;
-    stroke-dasharray:1400;stroke-dashoffset:1400;animation:draw 3s ease forwards}
-  @keyframes draw{to{stroke-dashoffset:0}}
-  .srcs{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
-  .src{font-family:var(--mono);font-size:.78rem;color:var(--muted);border:1px solid var(--edge);
-    border-radius:100px;padding:7px 15px}
-  section{padding:64px 0;border-top:1px solid var(--edge)}
-  .kicker{font-family:var(--serif);font-weight:500;font-size:clamp(1.7rem,3.4vw,2.5rem);
-    letter-spacing:-.01em;margin:12px 0 30px}
-  .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
-  .fstep{border:1px solid var(--edge);border-radius:12px;padding:18px;background:var(--bg-2)}
-  .fstep .n{font-family:var(--mono);color:var(--amber);font-size:.72rem}
-  .fstep h3{font-size:.98rem;font-weight:600;margin:8px 0 5px}
-  .fstep p{color:var(--muted);font-size:.84rem}
-  .privacy{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-  .privacy .big{font-family:var(--serif);font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.1}
-  .privacy .big em{font-style:italic;color:var(--mint)}
-  .neverlist{list-style:none;display:grid;gap:12px}
-  .neverlist li{display:flex;gap:12px;align-items:flex-start;font-size:.95rem;color:var(--muted);
-    border:1px solid var(--edge);border-radius:10px;padding:14px 16px;background:var(--panel)}
-  .neverlist .x{color:var(--mint);font-family:var(--mono);flex-shrink:0}
-  footer{padding:60px 0 84px;border-top:1px solid var(--edge);text-align:center}
-  footer p{color:var(--faint);font-family:var(--mono);font-size:.82rem;margin-top:20px}
-  @media(max-width:820px){.flow{grid-template-columns:1fr 1fr}.privacy{grid-template-columns:1fr;gap:26px}
-    header{padding:80px 0 10px}}
-  @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto}
-    .beat{animation:none;stroke-dashoffset:0}}
-  :focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:4px}
-</style>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" /></head>
-<body>
-<header>
-  <div class="wrap">
-    <span class="eyebrow">Local-first personal agent</span>
-    <h1>Your week, <em>read back to you</em> every Monday.</h1>
-    <p class="lede">Pulse connects activity across Gmail, GitHub, and Notion into a weekly review of decisions, commitments and stalled work. Open the evidence behind each claim. Claude interpretation is optional.</p>
-    <div class="cta-row">
-      <a class="btn btn-primary" href="/sample.html">Read a sample briefing →</a>
-      <a class="btn btn-ghost" href="#privacy">Why it stays local</a>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f6f3" />
+    <title>Pulse | A clearer week, grounded in evidence</title>
+    <meta
+      name="description"
+      content="An evidence-backed weekly review of decisions, commitments and stalled work. Inspect a source, decide a follow-up and leave with a plan. Local-first; model interpretation is optional."
+    />
+    <link rel="canonical" href="https://pulse-overview.vercel.app/" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="workspace.css" />
+    <link rel="stylesheet" href="landing.css" />
+    <link
+      rel="preload"
+      href="fonts/dm-sans-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#product">Skip to product</a>
+    <div class="site-wrap">
+      <header class="site-header">
+        <a class="wordmark" href="/"
+          >Pulse <span>Weekly operating review</span></a
+        >
+        <nav aria-label="Product">
+          <a href="#method">How it works</a><a href="#privacy">Your data</a
+          ><a href="https://github.com/MohammedAlkindi/Pulse">GitHub</a
+          ><a class="act primary" href="sample.html">Try the review</a>
+        </nav>
+      </header>
+      <main class="landing" id="product">
+        <section class="hero">
+          <div>
+            <p class="eyebrow">From scattered updates to a clear next step</p>
+            <h1>Read the week.<br /><em>Choose what’s next.</em></h1>
+            <p class="hero-copy">
+              Your work is spread across email, code and tasks. Pulse brings the
+              decisions, promises and stalled work into one review—with the
+              evidence behind every claim.
+            </p>
+            <div class="hero-actions">
+              <a class="act primary" href="sample.html"
+                >Open the sample workspace</a
+              ><a href="#method">See the method ↓</a>
+            </div>
+            <p class="hero-foot">
+              Local ledger · no Pulse account · model optional
+            </p>
+          </div>
+          <div
+            class="preview"
+            aria-label="Synthetic example of an evidence-backed review"
+          >
+            <div class="preview-top">
+              <span class="eyebrow">Example review</span
+              ><span class="tag">Synthetic · 2026-W31</span>
+            </div>
+            <p class="preview-label">You promised</p>
+            <h2>Send the final scholar list before Friday.</h2>
+            <p class="meta">OmanX · due July 31 · source: invented email</p>
+            <div class="evidence-preview">
+              <span class="tag acc">Evidence</span>
+              <blockquote>
+                “I’ll send you the final scholar list by Friday.”
+              </blockquote>
+              <p class="meta">Captured claim · not a completed task</p>
+            </div>
+            <div class="preview-step">
+              <span class="step-number">01</span>
+              <div>
+                <strong>Inspect the source</strong>
+                <p>Check what was said, by whom and when.</p>
+              </div>
+            </div>
+            <div class="preview-step">
+              <span class="step-number">02</span>
+              <div>
+                <strong>Choose a follow-up</strong>
+                <p>Record your next action separately from the claim.</p>
+              </div>
+            </div>
+            <a class="preview-link" href="sample.html"
+              >Work through the full example →</a
+            >
+          </div>
+        </section>
+        <section class="method" id="method">
+          <p class="eyebrow">A review you can follow back to its source</p>
+          <h2>Less catching up.<br /><em>More closing the loop.</em></h2>
+          <div class="method-grid">
+            <article>
+              <span>01 / Connect</span>
+              <h3>One view of the week</h3>
+              <p>
+                Gmail, GitHub and Notion activity resolve into workstreams in a
+                local SQLite ledger. Missing source coverage stays visible.
+              </p>
+            </article>
+            <article>
+              <span>02 / Verify</span>
+              <h3>Read the evidence</h3>
+              <p>
+                Decisions, commitments and blockers link to captured records.
+                External claims and unverified source content keep their labels.
+              </p>
+            </article>
+            <article>
+              <span>03 / Decide</span>
+              <h3>Leave with an action list</h3>
+              <p>
+                Review an item, choose follow-up or waiting, write your next
+                step and download a plan. Reviewing a promise never marks it
+                fulfilled.
+              </p>
+            </article>
+          </div>
+        </section>
+        <section class="privacy" id="privacy">
+          <div>
+            <p class="eyebrow">A personal review, on your terms</p>
+            <h2>Your work history<br /><em>stays in your ledger.</em></h2>
+          </div>
+          <div>
+            <p>
+              Pulse runs locally. The public workspace uses only invented
+              records; it never connects to your accounts.
+            </p>
+            <p>
+              The default review is deterministic. If you configure optional
+              model interpretation, selected titles and short snippets are sent
+              to that model provider. Credentials are kept outside the ledger.
+            </p>
+            <a
+              class="act"
+              href="https://github.com/MohammedAlkindi/Pulse#setup-with-your-own-accounts"
+              >Set up the local app ↗</a
+            >
+          </div>
+        </section>
+        <section class="closing">
+          <p class="eyebrow">Try one complete review</p>
+          <h2>Start with the evidence.<br />Finish with a next step.</h2>
+          <a class="act primary" href="sample.html"
+            >Open the sample workspace</a
+          >
+          <p class="meta">
+            Synthetic data. No signup, account connection or model key.
+          </p>
+        </section>
+      </main>
+      <footer>
+        <a class="wordmark" href="/">Pulse</a>
+        <p>Evidence-backed weekly review</p>
+        <a href="https://github.com/MohammedAlkindi/Pulse"
+          >Source &amp; local setup ↗</a
+        >
+      </footer>
     </div>
-    <div class="wave" aria-hidden="true">
-      <svg viewBox="0 0 1000 120" preserveAspectRatio="none">
-        <path class="track" d="M0,60 L1000,60" />
-        <path class="beat" d="M0,60 L180,60 L210,60 L230,22 L260,98 L290,60 L430,60 L455,40 L480,60 L640,60 L668,18 L698,102 L726,60 L860,60 L884,46 L905,60 L1000,60" />
-      </svg>
-    </div>
-    <div class="srcs">
-      <span class="src">Gmail</span><span class="src">GitHub</span><span class="src">Notion</span>
-      <span class="src">→ SQLite</span><span class="src">→ weekly briefing</span>
-    </div>
-  </div>
-</header>
-
-<section>
-  <div class="wrap">
-    <span class="eyebrow">The loop</span>
-    <h2 class="kicker">Five quiet steps, once a week.</h2>
-    <div class="flow">
-      <div class="fstep"><div class="n">01</div><h3>Ingest</h3><p>The last 7 days from every connected source.</p></div>
-      <div class="fstep"><div class="n">02</div><h3>Store</h3><p>Normalised events written to a local SQLite file.</p></div>
-      <div class="fstep"><div class="n">03</div><h3>Analyse</h3><p>Evidence and momentum computed locally. Claude interpretation is optional.</p></div>
-      <div class="fstep"><div class="n">04</div><h3>Brief</h3><p>A Markdown briefing drafted for the week ahead.</p></div>
-      <div class="fstep"><div class="n">05</div><h3>Deliver</h3><p>Optionally emailed to you when you pass <span style="font-family:var(--mono)">--send</span>.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="privacy">
-  <div class="wrap">
-    <div class="privacy">
-      <div>
-        <span class="eyebrow">Private by construction</span>
-        <div class="big" style="margin-top:14px">No server. No cloud. <em>Nothing leaves</em> that doesn't have to.</div>
-      </div>
-      <ul class="neverlist">
-        <li><span class="x">✕</span> Email bodies — only the subject and a 120-character snippet are ever kept.</li>
-        <li><span class="x">✕</span> Notion page contents — only titles, status, and edit times.</li>
-        <li><span class="x">✕</span> Credentials or tokens — gitignored, never written to the database.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap">
-    <a class="btn btn-primary" href="https://github.com/MohammedAlkindi/Pulse">View on GitHub ↗</a>
-    <p>Pulse · a local-first personal agent by Mohammed Alkindi · optional interpretation by Claude</p>
-  </div>
-</footer>
-</body>
+  </body>
 </html>

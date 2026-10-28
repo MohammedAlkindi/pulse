@@ -76,6 +76,8 @@ class PulseHandler(BaseHTTPRequestHandler):
             if route.startswith("/static/"):
                 return self._static(route[len("/static/"):])
 
+            if route == "/api/review":
+                return self._json(api.review())
             if route == "/api/status":
                 return self._json(api.status(self.cfg))
             if route == "/api/briefing":

@@ -264,3 +264,30 @@ class TestSourceFailureIsolation:
 def _empty_analysis() -> dict:
     return {"themes": [], "active_projects": [], "drifting": [],
             "attention_next_week": [], "data_quality_notes": []}
+
+
+class TestReviewQueue:
+    def test_prioritizes_verification_without_promoting_untrusted_claims(self, corpus_db, monkeypatch):
+        from agent import clock
+        from agent.web import api
+        monkeypatch.setattr(clock, "_pinned", ANCHOR)
+        result = api.review(db_path=corpus_db)
+        expected = GROUND_TRUTH["review_queue"]
+        verify = [item for item in result["items"] if expected["verify_evidence"] in item["evidence"]]
+        assert verify and all(item["priority"] == "Verify source" for item in verify)
+        assert result["items"][0]["trust"] == "suspicious"
+        due = next(item for item in result["items"] if expected["due_evidence"] in item["evidence"] and item["kind"] == "commitment_by_user")
+        assert due["priority"] == "Due soon"
+        assert due["deadline_state"] == expected["due_state"]
+        assert api.evidence(due["evidence"], db_path=corpus_db)["events"]
+        assert all(api.evidence(item["evidence"], db_path=corpus_db)["events"] for item in result["items"])
+        assert "not proof" in result["notice"]
+
+    def test_queue_is_read_only_and_does_not_resolve_source_items(self, corpus_db, monkeypatch):
+        from agent import clock
+        from agent.web import api
+        monkeypatch.setattr(clock, "_pinned", ANCHOR)
+        before = db.list_items(db_path=corpus_db)
+        api.review(db_path=corpus_db)
+        assert db.list_items(db_path=corpus_db) == before
+        assert all(row["status"] == "unknown" for row in api.review(db_path=corpus_db)["coverage"])
