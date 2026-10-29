@@ -15,7 +15,7 @@ def build():
         shutil.copy2(static / name, OUTPUT / name)
     fonts = OUTPUT / "fonts"
     fonts.mkdir(exist_ok=True)
-    for name in ("dm-sans-latin.woff2", "dm-mono-400-latin.woff2", "fraunces-600-latin.woff2", "OFL.txt"):
+    for name in ("dm-sans-latin.woff2", "dm-mono-400-latin.woff2", "fraunces-600-latin.woff2", "OFL.txt", "instrument-serif-latin.woff2", "jetbrains-mono-latin.woff2", "instrumentserif-OFL.txt", "jetbrainsmono-OFL.txt"):
         shutil.copy2(static / "fonts" / name, fonts / name)
 
 
