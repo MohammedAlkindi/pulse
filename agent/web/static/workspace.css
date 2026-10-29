@@ -842,7 +842,9 @@ dialog#drawer h2 { font:400 32px/1.12 var(--serif); }
  .nav-links { order:3; flex-basis:100%; width:100%; flex-wrap:nowrap; overflow-x:auto; gap:16px; }
  .workspace-nav button { font-size:11px; flex-shrink:0; white-space:nowrap; }
  .local-link { margin-left:auto; font-size:11px; }
- .nav-system { width:auto; }
+ .nav-links:has(.nav-system) { flex-wrap:wrap; overflow:visible; }
+ .nav-system { width:auto; display:block; font-size:12px; }
+ .nav-system[open] .system-menu { left:0; right:auto; }
  .workspace-main { padding:32px 20px 48px; }
  h1 { font-size:34px; }
  .review-heading { display:block; margin-bottom:26px; }
