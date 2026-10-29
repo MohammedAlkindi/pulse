@@ -37,9 +37,9 @@
   }
   function card(item) {
     const state = saved(item.id);
-    return `<article class="queue-item"><div class="item-h"><span class="tag ${item.trust === "suspicious" ? "bad" : item.priority === "Blocked" ? "warn" : "acc"}">${esc(item.priority)}</span><span class="meta">${esc(item.kind.replaceAll("_", " "))}${item.due_date ? ` · due ${esc(item.due_date)}` : ""}</span><span class="tag">${LABELS[state.status]}</span></div>
-      <h2>${esc(item.text)}</h2><p class="meta">${esc(item.counterparty || "Source record")} · ${item.evidence.length} evidence record${item.evidence.length === 1 ? "" : "s"}${item.trust !== "normal" ? ` · ${item.trust === "suspicious" ? "UNVERIFIED source content" : "External claim"}` : ""}</p>
-      <button class="act primary" data-review="${esc(item.id)}">Inspect &amp; review</button>${state.note ? `<p class="review-note"><strong>Your note:</strong> ${esc(state.note)}</p>` : ""}</article>`;
+    return `<article class="queue-item"><div class="item-h"><span class="${item.trust === "suspicious" ? "trust-warning" : "meta"}">${esc(item.priority)}</span>${item.due_date ? `<span class="meta">Due ${esc(item.due_date)}</span>` : ""}${state.status !== "unreviewed" ? `<span class="meta">${LABELS[state.status]}</span>` : ""}</div>
+      <h2>${esc(item.text)}</h2><p class="meta">${esc(item.counterparty || "Source record")}${item.trust !== "normal" ? ` · ${item.trust === "suspicious" ? "UNVERIFIED source content" : "External claim"}` : ""}</p>
+      <button class="act" data-review="${esc(item.id)}">Inspect &amp; review</button>${state.note ? `<p class="review-note"><strong>Your note:</strong> ${esc(state.note)}</p>` : ""}</article>`;
   }
   function paint() {
     const list = document.getElementById("review-list");
@@ -58,9 +58,9 @@
     const remaining = data.items.filter(
       (item) => saved(item.id).status === "unreviewed",
     ).length;
-    document.getElementById("remaining-count").textContent = String(remaining);
+
     document.getElementById("review-count").textContent =
-      `${rows.length} shown · ${data.items.length - remaining} reviewed or triaged`;
+      `${rows.length} items · ${remaining} need review`;
   }
   root.PulseReview = {
     setup(deps) {
@@ -68,9 +68,7 @@
     },
     html(result) {
       data = result;
-      return `<div class="page-title"><h1>Review queue</h1><p class="sub">Review source claims and choose your next step.</p></div>
-      ${root.PULSE_SAMPLE ? '<p class="note"><strong>Synthetic workspace.</strong> Invented records · 2026-W31 · No connected accounts.</p>' : `<p class="note">Source coverage: ${data.coverage.map((c) => `${esc(c.source)} — ${esc(c.status)}`).join(" · ")}. Unknown or failed sources can leave gaps.</p>`}
-      <p class="review-summary"><span><strong id="remaining-count">0</strong> need review</span><span>${data.summary.verify} unverified source claim${data.summary.verify === 1 ? "" : "s"}</span><span>${data.summary.overdue} overdue</span><span>${esc(data.week)}</span></p>
+      return `<div class="review-heading"><div><h1>Review queue</h1><p class="review-period">${esc(data.week)}${root.PULSE_SAMPLE ? ' · <strong>Synthetic workspace.</strong> Invented records, no connected accounts.' : ""}</p></div><button class="act" id="export-review">Download action list</button></div>
       <div class="review-toolbar"><label>Review state<select id="review-filter">${Object.entries(
         {
           unreviewed: "Needs review",
@@ -86,8 +84,8 @@
         )
         .join(
           "",
-        )}</select></label><label>Find an item<input type="search" id="review-search" placeholder="Project, person or commitment…" value="${esc(query)}"></label><button class="act" id="export-review">Download action list</button></div>
-      <p class="meta" id="review-count" role="status"></p><div id="review-list"></div><p class="note">${esc(data.notice)} Your review notes stay in this browser. They are not sent to the model or written into the source ledger.</p>`;
+        )}</select></label><label>Find an item<input type="search" id="review-search" placeholder="Project, person or commitment…" value="${esc(query)}"></label></div>
+      <p class="meta" id="review-count" role="status"></p><div id="review-list"></div><details class="review-about"><summary>About this review</summary><p>${esc(data.notice)} Your review notes stay in this browser. They are not sent to the model or written into the source ledger.</p><p>${root.PULSE_SAMPLE ? "All source records are invented." : `Source coverage: ${data.coverage.map((c) => `${esc(c.source)}: ${esc(c.status)}`).join(" · ")}. Failed sources can leave gaps.`}</p><p>${data.summary.verify} unverified claims · ${data.summary.overdue} overdue</p></details>`;
     },
     bind() {
       paint();

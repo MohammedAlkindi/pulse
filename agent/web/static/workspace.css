@@ -1150,3 +1150,55 @@ dialog#drawer .eyebrow {
   width: 100%;
   text-align: left;
 }
+
+/* Quiet review surface: one reading column, secondary context on demand. */
+:root { --ink:#292927; --muted:#696965; --accent:#454541; --accent-bg:#f5f5f3; --rule:#e9e9e6; }
+body { font-size:14px; }
+.workspace-nav { min-height:68px; max-width:1040px; margin:auto; padding:0 32px; gap:42px; border:0; }
+.brand:before { display:none; }
+.brand { font-size:20px; letter-spacing:-.6px; }
+.nav-links { gap:14px; }
+.workspace-nav button { border-radius:0; padding:12px 0; color:var(--muted); }
+.workspace-nav button.on { background:transparent; color:var(--ink); box-shadow:inset 0 -1px var(--ink); }
+.workspace-main { max-width:880px; padding:68px 32px 64px; }
+h1 { font-size:30px; font-weight:500; letter-spacing:-1px; }
+.review-heading { display:flex; justify-content:space-between; align-items:start; gap:24px; margin-bottom:38px; }
+.review-period { color:var(--muted); font-size:12px; margin-top:12px; max-width:380px; }
+.review-period strong { font-weight:400; }
+.review-heading .act { font-size:12px; background:transparent; border:0; text-decoration:underline; text-underline-offset:4px; padding:4px 0; }
+.review-toolbar { display:grid; grid-template-columns:180px minmax(0,1fr); gap:16px; margin:0 0 18px; }
+.review-toolbar label:first-child { max-width:none; }
+.review-toolbar input,.review-toolbar select { font-size:14px; min-height:42px; background:#fafaf9; border-color:transparent; }
+.review-toolbar label { font-size:12px; }
+#review-count { margin:20px 0 4px; font-size:12px; }
+#review-list { border:0; border-radius:0; }
+.queue-item { padding:24px 0; column-gap:28px; row-gap:7px; }
+.queue-item h2 { font-size:16px; font-weight:400; line-height:1.55; letter-spacing:0; }
+.queue-item > .meta,.queue-item .meta { font-size:12px; }
+.queue-item > .act { font-size:12px; background:transparent; min-height:44px; border:0; text-decoration:underline; text-underline-offset:4px; padding:8px 0 8px 12px; }
+.queue-item > .act:hover { background:transparent; color:#111; }
+.trust-warning { font-size:12px; color:var(--bad); font-weight:600; }
+.review-about { margin-top:32px; color:var(--muted); font-size:12px; }
+.review-about summary { display:inline-block; padding:8px 0; text-decoration:underline; text-underline-offset:4px; }
+.review-about p { margin:10px 0; max-width:600px; }
+.panel,.brief { border:0; border-radius:0; padding:20px 0; }
+.card { border:0; border-bottom:1px solid var(--rule); border-radius:0; padding:24px 0; }
+.grid { grid-template-columns:1fr; gap:0; }
+.activity-bars { max-width:260px; }
+.brief-outline a { border:0; background:transparent; padding:4px 0; margin-right:14px; text-decoration:underline; }
+.brief h2 { font-size:24px; font-weight:500; }
+dialog#drawer { box-shadow:none; }
+@media(max-width:640px) {
+ .workspace-nav { padding:18px 22px; gap:12px; }
+ .nav-links { gap:10px; flex-wrap:nowrap; overflow-x:auto; width:100%; }
+ .workspace-nav button { font-size:11px; white-space:nowrap; flex-shrink:0; }
+ .workspace-main { padding:36px 22px 48px; }
+ .review-heading { display:block; margin-bottom:28px; }
+ .review-heading .act { margin-top:14px; }
+ .review-toolbar { grid-template-columns:1fr; gap:14px; }
+ .review-toolbar label { min-width:0; }
+ .queue-item { padding:24px 0; }
+ .queue-item > .act { padding:4px 0; margin:0; }
+ .queue-item h2 { font-size:16px; }
+ h1 { font-size:28px; }
+}
